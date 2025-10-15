@@ -78,7 +78,7 @@ void Game::handlePlayerInput(const sf::Vector2i& mousePos) {
         return;
     }
 
-    float spacing = 105;
+    float spacing = CellSize;
     float offset = 50.0f;
 
     // Chuyển đổi tọa độ chuột sang tọa độ hàng/cột trên bàn cờ
