@@ -23,7 +23,7 @@ Game::Game() : window(sf::VideoMode(BoardSize * CellSize, BoardSize* CellSize + 
     turnIndicatorText.setFont(font);
     turnIndicatorText.setCharacterSize(24);
     turnIndicatorText.setFillColor(sf::Color::Black);
-    turnIndicatorText.setPosition(50, 950);
+    turnIndicatorText.setPosition(CellSize, window.getSize().y - 30);
 
     notificationText.setFont(font);
     notificationText.setCharacterSize(20);
@@ -162,6 +162,7 @@ void Game::handleSettingsEvents(const sf::Event& event) {
 void Game::updatePlaying() {
     // Cập nhật text hiển thị lượt đi (Đây là nơi nó nên được cập nhật liên tục)
     turnIndicatorText.setString(std::string("Turn: ") + (currentPlayer == Stone::Black ? "Black" : "White"));
+	window.draw(turnIndicatorText); // VẼ LẠI Ở ĐÂY ĐỂ ĐẢM BẢO NÓ LUÔN HIỂN THỊ
 
     // Logic lượt đi của AI (giữ nguyên)
     if (!isGameOver && currentMode == GameMode::PlayerVsAI && currentPlayer == Stone::White) { // Giả sử AI luôn là quân trắng
