@@ -30,8 +30,11 @@ public:
     const std::vector<std::vector<Stone>>& getBoardState() const;
     bool isWithinBounds(int row, int col) const;
     int boardSize;
+    void printToConsole() const;
+    void printToConsole(const std::vector<std::vector<Stone>>& boardToPrint, const std::string& title) const;
 
     std::vector<std::vector<Stone>> grid;
+    std::vector<std::vector<Stone>> lastGrid;
     sf::Texture blackStoneTexture, whiteStoneTexture;
     sf::Sprite blackStoneSprite, whiteStoneSprite;
     

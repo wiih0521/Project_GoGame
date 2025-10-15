@@ -5,7 +5,7 @@
 #include <set>
 #include "Game.h"
 
-Board::Board(int size) : boardSize(size), grid(size, std::vector<Stone>(size, Stone::None)) {
+Board::Board(int size) : boardSize(size), grid(size, std::vector<Stone>(size, Stone::None)), lastGrid(size, std::vector<Stone>(size, Stone::None)) {
     // Tải assets - bạn cần đảm bảo các tệp này tồn tại
 
     if (!BottomboardTexture.loadFromFile("assets/images/b.png")) std::cerr << "Error loading board texture\n";
@@ -81,16 +81,17 @@ bool Board::isWithinBounds(int row, int col) const {
     return row >= 0 && row < Board::boardSize && col >= 0 && col < Board::boardSize;
 }
 
+
 bool Board::placeStone(int row, int col, Stone player) {
     if (!isWithinBounds(row, col) || grid[row][col] != Stone::None) {
         return false; // Vị trí không hợp lệ
     }
-
+    std::vector<std::vector<Stone>> originalGrid = grid;
     // Tạm thời đặt quân cờ
     grid[row][col] = player;
 
     // Lưu trạng thái trước khi bắt quân để kiểm tra Ko và tự sát
-    std::vector<std::vector<Stone>> originalGrid = grid;
+    
 
     // Tìm và bắt quân đối phương xung quanh nước đi mới
     Stone opponent = (player == Stone::Black) ? Stone::White : Stone::Black;
@@ -114,11 +115,22 @@ bool Board::placeStone(int row, int col, Stone player) {
 
     // Kiểm tra nước đi tự sát cho quân vừa đặt
     // Nếu nước đi của mình không bắt được quân nào VÀ không có tự do, đó là tự sát.
+    printToConsole(grid, "BOARD STATE ");
+    printToConsole(originalGrid, "ORIGINAL STATE (REVERTING TO)");
+    printToConsole(lastGrid, "LAST STATE (KO)");
+    
     if (!capturedAny && countLiberties(row, col, player) == 0) {
         grid = originalGrid; // Hoàn tác nước đi
         return false;
     }
-
+    if(lastGrid == grid) {
+        std::cerr << "KO";
+        grid = originalGrid; // Hoàn tác nước đi
+		std::cerr << "Reverted to original state due to KO rule violation.\n";
+        return false;
+	}
+    lastGrid = originalGrid; // Cập nhật trạng thái trước đó để kiểm tra Ko
+       
     return true;
 }
 
@@ -166,8 +178,68 @@ int Board::countLiberties(int startRow, int startCol, Stone player) {
         }
     }
     return libertiesSet.size(); // Trả về số lượng tự do duy nhất
+}
 
+void Board::printToConsole() const {
+    std::cerr << "--- BOARD STATE (" << boardSize << "x" << boardSize << ") ---\n";
+    // In chỉ số cột ở trên cùng để dễ nhìn
+    std::cerr << "   ";
+    for (int c = 0; c < boardSize; ++c) {
+        std::cerr << c % 10 << " "; // In chữ số cuối của cột
+    }
+    std::cerr << "\n";
 
+    for (int r = 0; r < boardSize; ++r) {
+        // In chỉ số hàng ở đầu mỗi dòng
+        std::cerr << r % 10 << " |";
+        for (int c = 0; c < boardSize; ++c) {
+            switch (grid[r][c]) {
+            case Stone::None:
+                std::cerr << " ."; // Dấu chấm cho ô trống
+                break;
+            case Stone::Black:
+                std::cerr << " X"; // X cho quân Đen
+                break;
+            case Stone::White:
+                std::cerr << " O"; // O cho quân Trắng
+                break;
+            }
+        }
+        std::cerr << " |" << std::endl; // Xuống dòng sau mỗi hàng
+    }
+    std::cerr << "--------------------------\n\n";
+}
+// Thêm hàm này vào cuối file Board.cpp
+
+void Board::printToConsole(const std::vector<std::vector<Stone>>& boardToPrint, const std::string& title) const {
+    std::cerr << "--- " << title << " (" << boardSize << "x" << boardSize << ") ---\n";
+    // In chỉ số cột
+    std::cerr << "   ";
+    for (int c = 0; c < boardSize; ++c) {
+        std::cerr << c % 10 << " ";
+    }
+    std::cerr << "\n";
+
+    for (int r = 0; r < boardSize; ++r) {
+        // In chỉ số hàng
+        std::cerr << r % 10 << " |";
+        for (int c = 0; c < boardSize; ++c) {
+            // SỬ DỤNG 'boardToPrint' THAY VÌ 'grid'
+            switch (boardToPrint[r][c]) {
+            case Stone::None:
+                std::cerr << " .";
+                break;
+            case Stone::Black:
+                std::cerr << " X";
+                break;
+            case Stone::White:
+                std::cerr << " O";
+                break;
+            }
+        }
+        std::cerr << " |" << std::endl;
+    }
+    std::cerr << "-------------------------------------\n\n";
 }
 
 // Hàm loại bỏ một nhóm quân cờ
