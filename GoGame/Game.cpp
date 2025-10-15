@@ -3,7 +3,7 @@
 #include <iostream>
 #include <fstream>
 
-const int BoardSize = 11; // Kích thước bàn cờ 11x11 
+const int BoardSize = 11; // Kích thước bàn cờ 
 int CellSize = 90; // Kích thước mỗi ô trên bàn cờ
 Game::Game() : window(sf::VideoMode(BoardSize * CellSize, BoardSize * CellSize), "Go Game"), board(BoardSize), isGameOver(false) {
     if (!font.loadFromFile("assets/fonts/arial.ttf")) {
