@@ -18,10 +18,10 @@ Board::Board(int size) : boardSize(size), grid(size, std::vector<Stone>(size, St
     if (!RightboardTexture.loadFromFile("assets/images/r.png")) std::cerr << "Error loading board texture\n";
     if (!CenterboardTexture.loadFromFile("assets/images/c.png")) std::cerr << "Error loading board texture\n";
     if (!BackGroundTexture.loadFromFile("assets/images/background.png")) std::cerr << "Error loading board texture\n";
-    
+
     if (!blackStoneTexture.loadFromFile("assets/images/black_stone.png")) std::cerr << "Error loading black stone texture\n";
     if (!whiteStoneTexture.loadFromFile("assets/images/white_stone.png")) std::cerr << "Error loading white stone texture\n";
-    
+
     BottomboardSprite.setTexture(BottomboardTexture);
     BottomLeftboardSprite.setTexture(BottomLeftboardTexture);
     BottomRightboardSprite.setTexture(BottomRightboardTexture);
@@ -59,11 +59,11 @@ void Board::draw(sf::RenderWindow& window) {
             else partSprite = &CenterboardSprite;
             if (partSprite) {
                 partSprite->setPosition(c * spacing + offset - (*partSprite).getGlobalBounds().width / 2,
-                    r * spacing + offset - (*partSprite).getGlobalBounds().height / 2); // Giả sử mỗi ô là 50x50 pixels
+                    r * spacing + offset - (*partSprite).getGlobalBounds().height / 2); 
                 window.draw(*partSprite);
             }
         }
-	}
+    }
 
     for (int r = 0; r < boardSize; ++r) {
         for (int c = 0; c < boardSize; ++c) {
