@@ -1,0 +1,207 @@
+﻿#include "Board.h"
+#include <vector>
+#include <iostream>
+#include <queue>
+#include <set>
+#include "Game.h"
+
+Board::Board(int size) : boardSize(size), grid(size, std::vector<Stone>(size, Stone::None)) {
+    // Tải assets - bạn cần đảm bảo các tệp này tồn tại
+
+    if (!BottomboardTexture.loadFromFile("assets/images/b.png")) std::cerr << "Error loading board texture\n";
+    if (!BottomLeftboardTexture.loadFromFile("assets/images/bl.png")) std::cerr << "Error loading board texture\n";
+    if (!BottomRightboardTexture.loadFromFile("assets/images/br.png")) std::cerr << "Error loading board texture\n";
+    if (!UpperboardTexture.loadFromFile("assets/images/u.png")) std::cerr << "Error loading board texture\n";
+    if (!UpperLeftboardTexture.loadFromFile("assets/images/ul.png")) std::cerr << "Error loading board texture\n";
+    if (!UpperRightboardTexture.loadFromFile("assets/images/ur.png")) std::cerr << "Error loading board texture\n";
+    if (!LeftboardTexture.loadFromFile("assets/images/l.png")) std::cerr << "Error loading board texture\n";
+    if (!RightboardTexture.loadFromFile("assets/images/r.png")) std::cerr << "Error loading board texture\n";
+    if (!CenterboardTexture.loadFromFile("assets/images/c.png")) std::cerr << "Error loading board texture\n";
+    if (!BackGroundTexture.loadFromFile("assets/images/background.png")) std::cerr << "Error loading board texture\n";
+    
+    if (!blackStoneTexture.loadFromFile("assets/images/black_stone.png")) std::cerr << "Error loading black stone texture\n";
+    if (!whiteStoneTexture.loadFromFile("assets/images/white_stone.png")) std::cerr << "Error loading white stone texture\n";
+    
+    BottomboardSprite.setTexture(BottomboardTexture);
+    BottomLeftboardSprite.setTexture(BottomLeftboardTexture);
+    BottomRightboardSprite.setTexture(BottomRightboardTexture);
+    UpperboardSprite.setTexture(UpperboardTexture);
+    UpperLeftboardSprite.setTexture(UpperLeftboardTexture);
+    UpperRightboardSprite.setTexture(UpperRightboardTexture);
+    LeftboardSprite.setTexture(LeftboardTexture);
+    RightboardSprite.setTexture(RightboardTexture);
+    CenterboardSprite.setTexture(CenterboardTexture);
+    BackGroundSprite.setTexture(BackGroundTexture);
+
+    blackStoneSprite.setTexture(blackStoneTexture);
+    whiteStoneSprite.setTexture(whiteStoneTexture);
+}
+
+void Board::draw(sf::RenderWindow& window) {
+    // window.draw(boardSprite);
+
+    float spacing = CenterboardSprite.getGlobalBounds().width; // Khoảng cách giữa các giao điểm
+    float offset = 50.0f; // Lề
+
+    // std::cerr << CenterboardSprite.getGlobalBounds().width << std::endl;
+
+    for (int r = 0; r < boardSize; ++r) {
+        for (int c = 0; c < boardSize; ++c) {
+            sf::Sprite* partSprite = nullptr;
+            if (r == 0 && c == 0) partSprite = &UpperLeftboardSprite;
+            else if (r == 0 && c == boardSize - 1) partSprite = &UpperRightboardSprite;
+            else if (r == boardSize - 1 && c == 0) partSprite = &BottomLeftboardSprite;
+            else if (r == boardSize - 1 && c == boardSize - 1) partSprite = &BottomRightboardSprite;
+            else if (r == 0) partSprite = &UpperboardSprite;
+            else if (r == boardSize - 1) partSprite = &BottomboardSprite;
+            else if (c == 0) partSprite = &LeftboardSprite;
+            else if (c == boardSize - 1) partSprite = &RightboardSprite;
+            else partSprite = &CenterboardSprite;
+            if (partSprite) {
+                partSprite->setPosition(c * spacing + offset - (*partSprite).getGlobalBounds().width / 2,
+                    r * spacing + offset - (*partSprite).getGlobalBounds().height / 2); // Giả sử mỗi ô là 50x50 pixels
+                window.draw(*partSprite);
+            }
+        }
+	}
+
+    for (int r = 0; r < boardSize; ++r) {
+        for (int c = 0; c < boardSize; ++c) {
+            if (grid[r][c] != Stone::None) {
+                sf::Sprite& stoneSprite = (grid[r][c] == Stone::Black) ? blackStoneSprite : whiteStoneSprite;
+                stoneSprite.setPosition(c * spacing + offset - stoneSprite.getGlobalBounds().width / 2,
+                    r * spacing + offset - stoneSprite.getGlobalBounds().height / 2);
+                window.draw(stoneSprite);
+            }
+        }
+    }
+}
+
+bool Board::isWithinBounds(int row, int col) const {
+    return row >= 0 && row < Board::boardSize && col >= 0 && col < Board::boardSize;
+}
+
+bool Board::placeStone(int row, int col, Stone player) {
+    if (!isWithinBounds(row, col) || grid[row][col] != Stone::None) {
+        return false; // Vị trí không hợp lệ
+    }
+
+    // Tạm thời đặt quân cờ
+    grid[row][col] = player;
+
+    // Lưu trạng thái trước khi bắt quân để kiểm tra Ko và tự sát
+    std::vector<std::vector<Stone>> originalGrid = grid;
+
+    // Tìm và bắt quân đối phương xung quanh nước đi mới
+    Stone opponent = (player == Stone::Black) ? Stone::White : Stone::Black;
+    bool capturedAny = false; // Cờ báo hiệu có quân nào bị bắt không
+
+    // Kiểm tra các ô xung quanh nước đi vừa rồi
+    int dr[] = { -1, 1, 0, 0 };
+    int dc[] = { 0, 0, -1, 1 };
+
+    for (int i = 0; i < 4; ++i) {
+        int nr = row + dr[i];
+        int nc = col + dc[i];
+        if (isWithinBounds(nr, nc) && grid[nr][nc] == opponent) {
+            // Chỉ kiểm tra nếu nhóm quân đối phương còn sống sau nước đi này
+            if (countLiberties(nr, nc, opponent) == 0) {
+                removeGroup(nr, nc, opponent);
+                capturedAny = true;
+            }
+        }
+    }
+
+    // Kiểm tra nước đi tự sát cho quân vừa đặt
+    // Nếu nước đi của mình không bắt được quân nào VÀ không có tự do, đó là tự sát.
+    if (!capturedAny && countLiberties(row, col, player) == 0) {
+        grid = originalGrid; // Hoàn tác nước đi
+        return false;
+    }
+
+    return true;
+}
+
+// Hàm isWithinBounds không đổi
+
+
+// Hàm đếm tự do cho một nhóm quân bằng BFS
+int Board::countLiberties(int startRow, int startCol, Stone player) {
+    if (!isWithinBounds(startRow, startCol) || grid[startRow][startCol] != player) {
+        return 0; // Không phải quân của người chơi hoặc ô trống
+    }
+
+    std::queue<std::pair<int, int>> q;
+    std::set<std::pair<int, int>> visitedGroupStones; // Theo dõi các quân trong nhóm đã thăm
+    std::set<std::pair<int, int>> libertiesSet;       // Theo dõi các tự do đã đếm (để tránh đếm trùng)
+
+    q.push({ startRow, startCol });
+    visitedGroupStones.insert({ startRow, startCol });
+
+    int dr[] = { -1, 1, 0, 0 };
+    int dc[] = { 0, 0, -1, 1 };
+
+    while (!q.empty()) {
+        std::pair<int, int> current = q.front();
+        q.pop();
+
+        for (int i = 0; i < 4; ++i) {
+            int nr = current.first + dr[i];
+            int nc = current.second + dc[i];
+
+            if (isWithinBounds(nr, nc)) {
+                if (grid[nr][nc] == player) {
+                    if (visitedGroupStones.find({ nr, nc }) == visitedGroupStones.end()) {
+                        visitedGroupStones.insert({ nr, nc });
+                        q.push({ nr, nc });
+                    }
+                }
+                else if (grid[nr][nc] == Stone::None) {
+                    // Nếu là ô trống và chưa được đếm là tự do cho nhóm này
+                    if (libertiesSet.find({ nr, nc }) == libertiesSet.end()) {
+                        libertiesSet.insert({ nr, nc });
+                    }
+                }
+            }
+        }
+    }
+    return libertiesSet.size(); // Trả về số lượng tự do duy nhất
+
+
+}
+
+// Hàm loại bỏ một nhóm quân cờ
+void Board::removeGroup(int startRow, int startCol, Stone playerToRemove) {
+    if (!isWithinBounds(startRow, startCol) || grid[startRow][startCol] != playerToRemove) {
+        return; // Không phải quân cần xóa hoặc ô trống
+    }
+
+    std::queue<std::pair<int, int>> q;
+    q.push({ startRow, startCol });
+    grid[startRow][startCol] = Stone::None; // Xóa quân đầu tiên
+
+    int dr[] = { -1, 1, 0, 0 };
+    int dc[] = { 0, 0, -1, 1 };
+
+    while (!q.empty()) {
+        std::pair<int, int> current = q.front();
+        q.pop();
+
+        for (int i = 0; i < 4; ++i) {
+            int nr = current.first + dr[i];
+            int nc = current.second + dc[i];
+
+            if (isWithinBounds(nr, nc) && grid[nr][nc] == playerToRemove) {
+                grid[nr][nc] = Stone::None; // Xóa quân trong nhóm
+                q.push({ nr, nc });
+            }
+        }
+    }
+}
+
+
+Stone Board::getStone(int row, int col) const { return grid[row][col]; }
+int Board::getSize() const { return boardSize; }
+void Board::reset() { grid.assign(boardSize, std::vector<Stone>(boardSize, Stone::None)); }
+void Board::setBoardState(const std::vector<std::vector<Stone>>& state) { grid = state; }
+const std::vector<std::vector<Stone>>& Board::getBoardState() const { return grid; }
