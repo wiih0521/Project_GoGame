@@ -91,7 +91,7 @@ bool Board::placeStone(int row, int col, Stone player) {
     grid[row][col] = player;
 
     // Lưu trạng thái trước khi bắt quân để kiểm tra Ko và tự sát
-
+    
 
     // Tìm và bắt quân đối phương xung quanh nước đi mới
     Stone opponent = (player == Stone::Black) ? Stone::White : Stone::Black;
@@ -118,19 +118,19 @@ bool Board::placeStone(int row, int col, Stone player) {
     printToConsole(grid, "BOARD STATE ");
     printToConsole(originalGrid, "ORIGINAL STATE (REVERTING TO)");
     printToConsole(lastGrid, "LAST STATE (KO)");
-
+    
     if (!capturedAny && countLiberties(row, col, player) == 0) {
         grid = originalGrid; // Hoàn tác nước đi
         return false;
     }
-    if (lastGrid == grid) {
+    if(lastGrid == grid) {
         std::cerr << "KO";
         grid = originalGrid; // Hoàn tác nước đi
-        std::cerr << "Reverted to original state due to KO rule violation.\n";
+		std::cerr << "Reverted to original state due to KO rule violation.\n";
         return false;
-    }
+	}
     lastGrid = originalGrid; // Cập nhật trạng thái trước đó để kiểm tra Ko
-
+       
     return true;
 }
 
