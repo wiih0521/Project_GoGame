@@ -3,7 +3,9 @@
 #include <iostream>
 #include <fstream>
 
-Game::Game() : window(sf::VideoMode(1000, 1000), "Go Game"), board(5), isGameOver(false) {
+const int BoardSize = 9; // Kích thước bàn cờ 
+int CellSize = 90; // Kích thước mỗi ô trên bàn cờ
+Game::Game() : window(sf::VideoMode(BoardSize * CellSize, BoardSize * CellSize), "Go Game"), board(BoardSize), isGameOver(false) {
     if (!font.loadFromFile("assets/fonts/arial.ttf")) {
         std::cerr << "Error loading font\n";
     }
@@ -76,7 +78,7 @@ void Game::handlePlayerInput(const sf::Vector2i& mousePos) {
         return;
     }
 
-    float spacing = 105;
+    float spacing = CellSize;
     float offset = 50.0f;
 
     // Chuyển đổi tọa độ chuột sang tọa độ hàng/cột trên bàn cờ
