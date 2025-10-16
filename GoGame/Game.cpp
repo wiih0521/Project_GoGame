@@ -5,10 +5,11 @@
 #include <algorithm> // Cho std::max_element
 #include <tuple>     // Cho std::tuple trong setupMainMenu
 
-const int BoardSize = 9; // size of game board
-const int CellSize = 90; // base on size of (c).png
-const float notificationSize = 40;
-Game::Game() : window(sf::VideoMode(BoardSize * CellSize, BoardSize* CellSize + notificationSize), "Go Game"), board(BoardSize), isGameOver(false), currentGameState(GameState::MainMenu), isSoundEnabled(true) {
+const int BoardSize = 19; // size of game board
+const int CellSize = 50; // base on size of (c).png
+const float notificationSize = 20;
+const float borderSize = 40;
+Game::Game() : window(sf::VideoMode(BoardSize * CellSize + borderSize, BoardSize* CellSize + borderSize + notificationSize), "Go Game"), board(BoardSize), isGameOver(false), currentGameState(GameState::MainMenu), isSoundEnabled(true) {
     if (!font.loadFromFile("assets/fonts/arial.ttf")) {
         std::cerr << "Error loading font\n";
     }
@@ -25,6 +26,14 @@ Game::Game() : window(sf::VideoMode(BoardSize * CellSize, BoardSize* CellSize + 
     turnIndicatorText.setFillColor(sf::Color::Black);
     turnIndicatorText.setPosition(CellSize, window.getSize().y - 30);
 
+    keyblindguideText.setFont(font);
+    keyblindguideText.setCharacterSize(24);
+    keyblindguideText.setFillColor(sf::Color::Black);
+
+    std::string keyblindGuide = "Z: undo           Y: redo           R: restart           S: save";
+    keyblindguideText.setString(keyblindGuide);
+    keyblindguideText.setPosition(window.getSize().x - keyblindGuide.size() * 10, window.getSize().y - 30);
+    
     notificationText.setFont(font);
     notificationText.setCharacterSize(20);
     notificationText.setFillColor(sf::Color::Red);
@@ -196,6 +205,7 @@ void Game::renderPlaying() {
     board.draw(window);
     window.draw(turnIndicatorText); // <== THÊM LẠI DÒNG NÀY ĐỂ VẼ TEXT LƯỢT ĐI
     window.draw(notificationText);
+    window.draw(keyblindguideText);
 }
 
 void Game::renderSettings() {
