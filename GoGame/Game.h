@@ -94,6 +94,7 @@ private:
     sf::Font font;
     sf::Text turnIndicatorText;
     sf::Text notificationText;
+    sf::Text EndGameText;
     sf::Text keyblindguideText;
 
     // -- Các thành phần mới cho Menu và Settings --

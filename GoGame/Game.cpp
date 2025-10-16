@@ -1,16 +1,21 @@
 ﻿#include "Game.h"
 #include <iostream>
 #include <fstream>
-#include <sstream>   // << Thêm dòng này
-#include <iomanip>   // << Thêm dòng này
+#include <sstream>   
+#include <iomanip>   
 #include <memory>
-#include <algorithm> // Cho std::max_element
-#include <tuple>     // Cho std::tuple trong setupMainMenu
+#include <algorithm> 
+#include <tuple>     
+#include <thread> // Add this at the top of the file for std::this_thread::sleep_for
+#include <chrono> // Add this for std::chrono::milliseconds
 
 const int BoardSize = 19; // size of game board
 const int CellSize = 50; // base on size of (c).png
 const float notificationSize = 20;
 const float borderSize = 40;
+
+const sf::Color darkGreen(0, 100, 0);
+
 Game::Game() : window(sf::VideoMode(BoardSize * CellSize + borderSize, BoardSize* CellSize + borderSize + notificationSize), "Go Game"), board(BoardSize), isGameOver(false), currentGameState(GameState::MainMenu), isSoundEnabled(true) {
     if (!font.loadFromFile("assets/fonts/arial.ttf")) {
         std::cerr << "Error loading font\n";
@@ -32,14 +37,9 @@ Game::Game() : window(sf::VideoMode(BoardSize * CellSize + borderSize, BoardSize
     keyblindguideText.setCharacterSize(24);
     keyblindguideText.setFillColor(sf::Color::Black);
 
-    std::string keyblindGuide = "Z: undo           Y: redo           R: restart           S: save";
+    std::string keyblindGuide = "Z: undo     Y: redo     R: restart     S: save     P: pass     Esc: mainMenu";
     keyblindguideText.setString(keyblindGuide);
-    keyblindguideText.setPosition(window.getSize().x - keyblindGuide.size() * 10, window.getSize().y - 30);
-    
-    notificationText.setFont(font);
-    notificationText.setCharacterSize(20);
-    notificationText.setFillColor(sf::Color::Red);
-    notificationText.setPosition(window.getSize().x / 2.0f, window.getSize().y - 50);
+    keyblindguideText.setPosition(window.getSize().x - keyblindGuide.size() * 10 - 30, window.getSize().y - 30);
 
     // Setup menu
     setupMainMenu();
@@ -53,6 +53,7 @@ Game::Game() : window(sf::VideoMode(BoardSize * CellSize + borderSize, BoardSize
 void Game::run() {
     while (window.isOpen()) {
         processEvents();
+        render();
         update();
         render();
     }
@@ -120,6 +121,12 @@ void Game::render() {
 
 // Cải tiến hàm này để căn giữa text động
 void Game::updateNotification(const std::string& message) {
+    notificationText.setFont(font);
+    notificationText.setStyle(sf::Text::Bold);
+    notificationText.setCharacterSize(20);
+    notificationText.setFillColor(sf::Color::Red);
+    notificationText.setPosition(window.getSize().x / 2.0f, window.getSize().y - 50);
+
     notificationText.setString(message);
     sf::FloatRect textRect = notificationText.getLocalBounds();
     notificationText.setOrigin(textRect.left + textRect.width / 2.0f,
@@ -180,6 +187,10 @@ void Game::updatePlaying() {
     if (!isGameOver && currentMode == GameMode::PlayerVsAI && currentPlayer == Stone::White) { // Giả sử AI luôn là quân trắng
         Move aiMove = ai->findBestMove(board, Stone::White);
         if (aiMove.row != -1 && board.placeStone(aiMove.row, aiMove.col, aiMove.player)) {
+
+            // Giả lập độ trễ cho AI
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
             // Nước đi của AI hợp lệ
             moveHistory.push(board.getBoardState());
             currentPlayer = Stone::Black;
@@ -490,7 +501,7 @@ void Game::handleEndGame() {
     // 5. Cập nhật và định dạng text thông báo
     notificationText.setString(resultStream.str());
     notificationText.setCharacterSize(40); // Làm cho chữ to hơn
-    notificationText.setFillColor(sf::Color::Blue);
+    notificationText.setFillColor(darkGreen); 
     notificationText.setStyle(sf::Text::Bold);
 
     // Căn giữa text trên màn hình
@@ -520,7 +531,7 @@ void Game::passTurn() {
     // Nếu cả hai người chơi đều bỏ lượt, kết thúc game
     if (consecutivePasses == 2) {
         isGameOver = true;
-        notificationText.setString("Game Over: Both players passed.");
+        updateNotification("Game Over: Both players passed.");
         handleEndGame();
     }
 }
