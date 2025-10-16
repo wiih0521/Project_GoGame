@@ -9,10 +9,13 @@
 #include <thread> // Add this at the top of the file for std::this_thread::sleep_for
 #include <chrono> // Add this for std::chrono::milliseconds
 
-const int BoardSize = 19; // size of game board
+const int BoardSize = 5; // size of game board
+const int MaxBoardSize = 19; // maximum size of game board
 const int CellSize = 50; // base on size of (c).png
 const float notificationSize = 20;
 const float borderSize = 40;
+const float MinSize = BoardSize * CellSize + borderSize;
+const float MaxSize = MaxBoardSize * CellSize + borderSize;
 
 const sf::Color darkGreen(0, 100, 0);
 
@@ -33,13 +36,47 @@ Game::Game() : window(sf::VideoMode(BoardSize * CellSize + borderSize, BoardSize
     turnIndicatorText.setFillColor(sf::Color::Black);
     turnIndicatorText.setPosition(CellSize, window.getSize().y - 30);
 
-    keyblindguideText.setFont(font);
+    /*keyblindguideText.setFont(font);
     keyblindguideText.setCharacterSize(24);
-    keyblindguideText.setFillColor(sf::Color::Black);
+    keyblindguideText.setFillColor(sf::Color::Black);*/
 
-    std::string keyblindGuide = "Z: undo     Y: redo     R: restart     S: save     P: pass     Esc: mainMenu";
-    keyblindguideText.setString(keyblindGuide);
-    keyblindguideText.setPosition(window.getSize().x - keyblindGuide.size() * 10 - 30, window.getSize().y - 30);
+    // =======================================================
+    // == THÊM MỚI: KHỞI TẠO UI CHO MÀN HÌNH GAME OVER ==
+    // =======================================================
+    // Lớp phủ
+    gameOverOverlay.setSize(sf::Vector2f(window.getSize()));
+    gameOverOverlay.setFillColor(sf::Color(0, 0, 0, 150)); // Màu đen, bán trong suốt
+
+    // Tiêu đề "GAME OVER"
+    gameOverTitleText.setFont(font);
+    gameOverTitleText.setString("GAME OVER");
+    gameOverTitleText.setCharacterSize(std::min(70.0f, 70 * 2 * (window.getSize().x / MaxSize)));
+    gameOverTitleText.setFillColor(sf::Color::Red);
+    gameOverTitleText.setStyle(sf::Text::Bold);
+
+    // Text điểm số
+    finalScoresText.setFont(font);
+    finalScoresText.setCharacterSize(std::min(30.0f, 30 * 2 * (window.getSize().x / MaxSize)));
+    finalScoresText.setFillColor(sf::Color::White);
+
+    // Text người thắng
+    winnerMessageText.setFont(font);
+    winnerMessageText.setCharacterSize(std::min(45.0f, 45 * 2 * (window.getSize().x / MaxSize)));
+    winnerMessageText.setFillColor(sf::Color::Yellow);
+    winnerMessageText.setStyle(sf::Text::Bold);
+
+    // Nút "Chơi lại"
+    playAgainButton.setFont(font);
+    playAgainButton.setString("Play Again");
+    playAgainButton.setCharacterSize(std::min(40.0f, 40 * 2 * (window.getSize().x / MaxSize)));
+    playAgainButton.setFillColor(sf::Color::White);
+
+    // Nút "Về Menu chính"
+    mainMenuButton.setFont(font);
+    mainMenuButton.setString("Back to Main Menu");
+    mainMenuButton.setCharacterSize(std::min(40.0f, 40 * 2 * (window.getSize().x / MaxSize)));
+    mainMenuButton.setFillColor(sf::Color::White);
+    // =======================================================
 
     // Setup menu
     setupMainMenu();
@@ -69,10 +106,21 @@ void Game::processEvents() {
         case GameState::MainMenu: handleMainMenuEvents(event); break;
         case GameState::Playing: handlePlayingEvents(event); break;
         case GameState::Settings: handleSettingsEvents(event); break;
-        case GameState::GameOver: // Có thể thêm xử lý riêng cho Game Over
-            // Hiện tại, chỉ cho phép quay về menu chính
+
+            // THÊM MỚI: Xử lý input cho màn hình GameOver
+        case GameState::GameOver:
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
                 currentGameState = GameState::MainMenu;
+            }
+            if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+                sf::Vector2i mousePos = { event.mouseButton.x, event.mouseButton.y };
+                if (playAgainButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
+                    startNewGame(currentMode, currentDifficulty); // Bắt đầu game mới với cài đặt cũ
+                    currentGameState = GameState::Playing; // Quay lại trạng thái chơi
+                }
+                if (mainMenuButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
+                    currentGameState = GameState::MainMenu;
+                }
             }
             break;
         }
@@ -81,38 +129,47 @@ void Game::processEvents() {
 
 void Game::update() {
     switch (currentGameState) {
-        // CHỈ GỌI updatePlaying KHI Ở TRẠNG THÁI PLAYING
     case GameState::Playing:
         updatePlaying();
         break;
+
+        // THÊM MỚI: Cập nhật highlight cho nút ở màn hình GameOver
+    case GameState::GameOver:
+    { // Thêm scope để khai báo biến cục bộ
+        sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+        playAgainButton.setFillColor(playAgainButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos)) ? sf::Color::Yellow : sf::Color::White);
+        mainMenuButton.setFillColor(mainMenuButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos)) ? sf::Color::Yellow : sf::Color::White);
+    }
+    break;
+
     default:
-        // Không có logic cập nhật phức tạp cho các trạng thái khác
         break;
     }
 }
 
 void Game::render() {
-    window.clear(sf::Color(200, 150, 100)); // Màu nền chung (có thể đổi)
+    window.clear(sf::Color(200, 150, 100));
 
     switch (currentGameState) {
     case GameState::MainMenu:
         renderMainMenu();
         break;
     case GameState::Playing:
-        renderPlaying(); // <== Đảm bảo gọi hàm vẽ khi đang chơi
+        renderPlaying();
         break;
     case GameState::Settings:
         renderSettings();
         break;
+        // SỬA ĐỔI case GameState::GameOver
     case GameState::GameOver:
-        renderPlaying(); // Vẫn vẽ bàn cờ khi game over
-        // Thêm text hiển thị kết quả game over
-        sf::Text gameOverText("GAME OVER!\nPress ESC to Main Menu", font, 40);
-        gameOverText.setFillColor(sf::Color::Red);
-        sf::FloatRect textRect = gameOverText.getLocalBounds();
-        gameOverText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
-        gameOverText.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f);
-        window.draw(gameOverText);
+        renderPlaying(); // Vẽ bàn cờ cuối cùng ở nền
+        window.draw(gameOverOverlay); // Vẽ lớp phủ mờ lên trên
+        // Vẽ các text của màn hình kết thúc
+        window.draw(gameOverTitleText);
+        window.draw(finalScoresText);
+        window.draw(winnerMessageText);
+        window.draw(playAgainButton);
+        window.draw(mainMenuButton);
         break;
     }
 
@@ -144,6 +201,10 @@ void Game::handleMainMenuEvents(const sf::Event& event) {
 }
 
 void Game::handlePlayingEvents(const sf::Event& event) {
+    if (isGameOver) {
+        return;
+    }
+
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
         handlePlayerInput(sf::Mouse::getPosition(window));
     }
@@ -183,8 +244,8 @@ void Game::updatePlaying() {
     turnIndicatorText.setString(std::string("Turn: ") + (currentPlayer == Stone::Black ? "Black" : "White"));
 	window.draw(turnIndicatorText); // VẼ LẠI Ở ĐÂY ĐỂ ĐẢM BẢO NÓ LUÔN HIỂN THỊ
 
-    // Logic lượt đi của AI (giữ nguyên)
     if (!isGameOver && currentMode == GameMode::PlayerVsAI && currentPlayer == Stone::White) { // Giả sử AI luôn là quân trắng
+		std::cerr << "AI is thinking...\n" << std::endl;
         Move aiMove = ai->findBestMove(board, Stone::White);
         if (aiMove.row != -1 && board.placeStone(aiMove.row, aiMove.col, aiMove.player)) {
 
@@ -197,10 +258,13 @@ void Game::updatePlaying() {
             while (!redoHistory.empty()) redoHistory.pop();
             updateNotification("AI played.");
             if (isSoundEnabled) placeSound.play(); // Play sound
+
+			consecutivePasses = 0; // Reset lượt pass liên tiếp khi có nước đi
         }
         else {
-            std::cerr << "AI could not find a valid move or game is over.\n";
-            updateNotification("AI could not move.");
+            updateNotification("AI passed.");
+			Game::passTurn(); // Nếu AI không thể di chuyển, coi như nó pass
+            std::cerr << "AI could not find a valid move or passed turn or game is over.\n";
             // Nếu AI không thể di chuyển, có thể coi là pass hoặc game over tùy luật
             // Vẫn là lượt của AI, AI có thể thử lại ở update tiếp theo, hoặc game có thể kết thúc.
             // Để đơn giản, ở đây AI cứ thử lại.
@@ -237,10 +301,6 @@ void Game::renderSettings() {
 
 // === Các hàm hỗ trợ Menu ===
 void Game::setupMainMenu() {
-    float startY = window.getSize().y / 2.0f - 150;
-    float spacing = 60.0f;
-    mainMenuButtons.clear();
-
     const std::vector<std::tuple<std::string, GameState, GameMode, Difficulty>> buttonData = {
         {"Play (Player vs Player)", GameState::Playing, GameMode::PlayerVsPlayer, Difficulty::Easy},
         {"Play (AI Easy)", GameState::Playing, GameMode::PlayerVsAI, Difficulty::Easy},
@@ -250,6 +310,13 @@ void Game::setupMainMenu() {
         {"Exit", GameState::GameOver, GameMode::PlayerVsPlayer, Difficulty::Easy}
     };
 
+	float CharSize = std::min(40.f, 90 * (window.getSize().x / MaxSize));
+	float SpaceSize = std::min(75.f, 200 * (window.getSize().y / MaxSize));
+    float totalHeight = buttonData.size() * (CharSize / 2 + SpaceSize / 2); // Tổng chiều cao của tất cả các nút
+
+    float startY = window.getSize().y / 2.0f - totalHeight / 2.0f;
+    mainMenuButtons.clear();
+
     for (const auto& data : buttonData) {
         MenuItem item;
         item.text = std::get<0>(data);
@@ -257,7 +324,7 @@ void Game::setupMainMenu() {
         item.targetMode = std::get<2>(data);
         item.targetDifficulty = std::get<3>(data);
         item.sfText.setFont(font);
-        item.sfText.setCharacterSize(30);
+        item.sfText.setCharacterSize(CharSize);
         item.sfText.setFillColor(sf::Color::White);
         item.sfText.setString(item.text);
         sf::FloatRect textRect = item.sfText.getLocalBounds();
@@ -265,8 +332,9 @@ void Game::setupMainMenu() {
         mainMenuButtons.push_back(item);
     }
 
+
     for (size_t i = 0; i < mainMenuButtons.size(); ++i) {
-        mainMenuButtons[i].sfText.setPosition(window.getSize().x / 2.0f, startY + i * spacing);
+        mainMenuButtons[i].sfText.setPosition(window.getSize().x / 2.0f, startY + i * SpaceSize);
     }
 }
 
@@ -369,6 +437,8 @@ void Game::handlePlayerInput(const sf::Vector2i& mousePos) {
 void Game::startNewGame(GameMode mode, Difficulty diff) {
     currentMode = mode;
     currentDifficulty = diff;
+    consecutivePasses = 0;
+    
     if (mode == GameMode::PlayerVsAI) {
         ai = std::make_unique<AI>(diff);
     }
@@ -463,54 +533,55 @@ void Game::redoMove() {
 // Thay thế hàm handleEndGame() trống bằng hàm này.
 // Lưu ý: Nó phải là một phương thức của lớp Game.
 void Game::handleEndGame() {
-    // 1. Lấy điểm số cuối cùng từ hàm tính toán
+    isGameOver = true;
+    currentGameState = GameState::GameOver;
+
     std::pair<float, float> finalScores = calculateFinalScores();
     float blackScore = finalScores.first;
     float whiteScore = finalScores.second;
 
-    // 2. Xác định người chiến thắng
-    std::string winnerMessage;
+    std::string winnerStr;
     if (blackScore > whiteScore) {
-        winnerMessage = "=> BLACK WINS!";
+        winnerStr = "BLACK WINS!";
     }
     else if (whiteScore > blackScore) {
-        winnerMessage = "=> WHITE WINS!";
+        winnerStr = "WHITE WINS!";
     }
     else {
-        winnerMessage = "=> IT'S A DRAW!";
+        winnerStr = "IT'S A DRAW!";
     }
 
-    // 3. In kết quả chi tiết ra console để gỡ lỗi
-    std::cout << "\n================ GAME OVER ================" << std::endl;
-    std::cout << std::fixed << std::setprecision(1); // Định dạng số thập phân
-    std::cout << "Final Black Score: " << blackScore << std::endl;
-    std::cout << "Final White Score: " << whiteScore << std::endl;
-    std::cout << winnerMessage << std::endl;
-    std::cout << "Press 'R' to play again." << std::endl;
-    std::cout << "=========================================" << std::endl;
+    // Cập nhật nội dung cho các Text object
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(1);
+    ss << "Black Score: " << blackScore << "\n"
+        << "White Score: " << whiteScore;
+    finalScoresText.setString(ss.str());
+    winnerMessageText.setString(winnerStr);
 
-    // 4. Tạo chuỗi hiển thị trên cửa sổ SFML
-    std::stringstream resultStream;
-    resultStream << std::fixed << std::setprecision(1);
-    resultStream << "GAME OVER\n\n"
-        << "Black Score: " << blackScore << "\n"
-        << "White Score: " << whiteScore << "\n\n"
-        << winnerMessage << "\n\n"
-        << "Press 'R' to Restart";
+    // Căn giữa và định vị các text trên màn hình
+    float centerX = window.getSize().x / 2.0f;
 
-    // 5. Cập nhật và định dạng text thông báo
-    notificationText.setString(resultStream.str());
-    notificationText.setCharacterSize(40); // Làm cho chữ to hơn
-    notificationText.setFillColor(darkGreen); 
-    notificationText.setStyle(sf::Text::Bold);
+    // Hàm trợ giúp để căn giữa text
+    auto centerText = [](sf::Text& text) {
+        sf::FloatRect bounds = text.getLocalBounds();
+        text.setOrigin(bounds.left + bounds.width / 2.0f, bounds.top + bounds.height / 2.0f);
+        };
 
-    // Căn giữa text trên màn hình
-    sf::FloatRect textRect = notificationText.getLocalBounds();
-    notificationText.setOrigin(textRect.left + textRect.width / 2.0f,
-        textRect.top + textRect.height / 2.0f);
-    notificationText.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f);
+    centerText(gameOverTitleText);
+    gameOverTitleText.setPosition(centerX, std::min(150.0f, 150.0f * 2 * (window.getSize().x / MaxSize)));
 
-    // Bạn cũng cần đảm bảo notificationText được vẽ trong hàm render()
+    centerText(winnerMessageText);
+    winnerMessageText.setPosition(centerX, std::min(250.0f, 250 * 2 * (window.getSize().x / MaxSize)));
+
+    centerText(finalScoresText);
+    finalScoresText.setPosition(centerX, std::min(350.0f, 350.0f * 2 * (window.getSize().x / MaxSize)));
+
+    centerText(playAgainButton);
+    playAgainButton.setPosition(centerX, std::min(500.0f, 420.0f * 2 * (window.getSize().x / MaxSize)));
+
+    centerText(mainMenuButton);
+    mainMenuButton.setPosition(centerX, std::min(580.0f, 490.0f * 2 * (window.getSize().x / MaxSize)));
 }
 
 void Game::passTurn() {

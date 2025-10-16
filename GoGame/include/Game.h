@@ -97,6 +97,17 @@ private:
     sf::Text EndGameText;
     sf::Text keyblindguideText;
 
+    // =======================================================
+    // == THÊM MỚI: CÁC THÀNH PHẦN CHO MÀN HÌNH GAME OVER ==
+    // =======================================================
+    sf::RectangleShape gameOverOverlay; // Lớp phủ mờ
+    sf::Text gameOverTitleText;      // Chữ "GAME OVER"
+    sf::Text finalScoresText;        // Text hiển thị điểm
+    sf::Text winnerMessageText;      // Text thông báo người thắng
+    sf::Text playAgainButton;        // Nút "Chơi lại"
+    sf::Text mainMenuButton;         // Nút "Về Menu chính"
+    // =======================================================
+
     // -- Các thành phần mới cho Menu và Settings --
     std::vector<MenuItem> mainMenuButtons;
     std::vector<MenuItem> settingsButtons; // Menu items for settings
