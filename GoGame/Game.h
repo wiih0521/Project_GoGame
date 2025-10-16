@@ -21,6 +21,7 @@ public:
 
     void handlePlayerInput(const sf::Vector2i& mousePos);
     void startNewGame(GameMode mode, Difficulty diff = Difficulty::Easy);
+    bool isWithinBounds(int row, int col) const;
     void saveGame();
     void loadGame();
     void undoMove();
@@ -49,6 +50,7 @@ public:
     sf::Text notificationText;
 
     int consecutivePasses;
+
 };
 
 #endif // GAME_H
