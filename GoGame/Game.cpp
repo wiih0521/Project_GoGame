@@ -2,6 +2,8 @@
 #include "Board.h"
 #include <iostream>
 #include <fstream>
+#include <sstream>   // << Thêm dòng này
+#include <iomanip>   // << Thêm dòng này
 
 const int BoardSize = 9; // Kích thước bàn cờ 
 int CellSize = 90; // Kích thước mỗi ô trên bàn cờ
@@ -43,6 +45,7 @@ void Game::processEvents() {
             if (event.key.code == sf::Keyboard::Z) undoMove();
             if (event.key.code == sf::Keyboard::Y) redoMove();
             if (event.key.code == sf::Keyboard::R) startNewGame(currentMode, currentDifficulty);
+            if (event.key.code == sf::Keyboard::P) passTurn();
         }
     }
 }
@@ -97,6 +100,7 @@ void Game::handlePlayerInput(const sf::Vector2i& mousePos) {
         currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
         while (!redoHistory.empty()) redoHistory.pop(); // Xóa redo stack khi có nước đi mới hợp lệ
         notificationText.setString(""); // Xóa thông báo nếu nước đi hợp lệ
+        consecutivePasses = 0;
     }
     else {
         // Nước đi không hợp lệ (ví dụ: ô đã có quân, nước tự sát)
@@ -170,4 +174,97 @@ void Game::redoMove() { // [cite: 86]
         redoHistory.pop();
         currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
     }
+}
+
+// Thay thế hàm handleEndGame() trống bằng hàm này.
+// Lưu ý: Nó phải là một phương thức của lớp Game.
+void Game::handleEndGame() {
+    // 1. Lấy điểm số cuối cùng từ hàm tính toán
+    std::pair<float, float> finalScores = calculateFinalScores();
+    float blackScore = finalScores.first;
+    float whiteScore = finalScores.second;
+
+    // 2. Xác định người chiến thắng
+    std::string winnerMessage;
+    if (blackScore > whiteScore) {
+        winnerMessage = "=> BLACK WINS!";
+    }
+    else if (whiteScore > blackScore) {
+        winnerMessage = "=> WHITE WINS!";
+    }
+    else {
+        winnerMessage = "=> IT'S A DRAW!";
+    }
+
+    // 3. In kết quả chi tiết ra console để gỡ lỗi
+    std::cout << "\n================ GAME OVER ================" << std::endl;
+    std::cout << std::fixed << std::setprecision(1); // Định dạng số thập phân
+    std::cout << "Final Black Score: " << blackScore << std::endl;
+    std::cout << "Final White Score: " << whiteScore << std::endl;
+    std::cout << winnerMessage << std::endl;
+    std::cout << "Press 'R' to play again." << std::endl;
+    std::cout << "=========================================" << std::endl;
+
+    // 4. Tạo chuỗi hiển thị trên cửa sổ SFML
+    std::stringstream resultStream;
+    resultStream << std::fixed << std::setprecision(1);
+    resultStream << "GAME OVER\n\n"
+        << "Black Score: " << blackScore << "\n"
+        << "White Score: " << whiteScore << "\n\n"
+        << winnerMessage << "\n\n"
+        << "Press 'R' to Restart";
+
+    // 5. Cập nhật và định dạng text thông báo
+    notificationText.setString(resultStream.str());
+    notificationText.setCharacterSize(40); // Làm cho chữ to hơn
+    notificationText.setFillColor(sf::Color::Blue);
+    notificationText.setStyle(sf::Text::Bold);
+
+    // Căn giữa text trên màn hình
+    sf::FloatRect textRect = notificationText.getLocalBounds();
+    notificationText.setOrigin(textRect.left + textRect.width / 2.0f,
+        textRect.top + textRect.height / 2.0f);
+    notificationText.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f);
+
+    // Bạn cũng cần đảm bảo notificationText được vẽ trong hàm render()
+}
+
+void Game::passTurn() {
+    if (isGameOver) {
+        return; // Không cho phép bỏ lượt khi game đã kết thúc
+    }
+
+    // Đổi lượt người chơi
+    currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
+    consecutivePasses++; // Tăng biến đếm
+
+    std::cout << "Turn passed. Consecutive passes: " << consecutivePasses << std::endl;
+
+    // Lưu lại trạng thái để có thể undo
+    moveHistory.push(board.getBoardState());
+    while (!redoHistory.empty()) redoHistory.pop();
+
+    // Nếu cả hai người chơi đều bỏ lượt, kết thúc game
+    if (consecutivePasses == 2) {
+        isGameOver = true;
+        notificationText.setString("Game Over: Both players passed.");
+        handleEndGame();
+    }
+}
+
+std::pair<float, float> Game::calculateFinalScores() const {
+    // 1. Lấy điểm lãnh thổ từ đối tượng Board
+    const float Komi = 6.5;
+    std::pair<int, int> territoryScores = board.calculateScores();
+    int blackTerritory = territoryScores.first;
+    int whiteTerritory = territoryScores.second;
+
+    // 2. Tính điểm cuối cùng
+    // Điểm của Đen = (Lãnh thổ của Đen) + (Số quân Trắng bắt được)
+    float finalBlackScore = static_cast<float>(blackTerritory + board.blackCapture);
+
+    // Điểm của Trắng = (Lãnh thổ của Trắng) + (Số quân Đen bắt được) + Komi
+    float finalWhiteScore = static_cast<float>(whiteTerritory + board.whiteCapture) + Komi;
+
+    return { finalBlackScore, finalWhiteScore };
 }

@@ -29,9 +29,10 @@ public:
     void setBoardState(const std::vector<std::vector<Stone>>& state);
     const std::vector<std::vector<Stone>>& getBoardState() const;
     bool isWithinBounds(int row, int col) const;
-    int boardSize;
+    int boardSize,whiteCapture, blackCapture;
     void printToConsole() const;
     void printToConsole(const std::vector<std::vector<Stone>>& boardToPrint, const std::string& title) const;
+    std::pair<int, int> calculateScores() const;
 
     std::vector<std::vector<Stone>> grid;
     std::vector<std::vector<Stone>> lastGrid;
@@ -81,7 +82,7 @@ public:
     // bool isSuicideMove(int row, int col, Stone player); // Không còn dùng
 
     // THÊM DÒNG NÀY VÀO Board.h
-    void removeGroup(int startRow, int startCol, Stone playerToRemove);
+    int removeGroup(int startRow, int startCol, Stone playerToRemove);
 };
 
 #endif // BOARD_H

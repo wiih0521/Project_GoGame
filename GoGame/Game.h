@@ -11,6 +11,7 @@ enum class GameMode { PlayerVsPlayer, PlayerVsAI };
 
 class Game {
 public:
+    
     Game();
     void run();
     bool isWithinBounds(int row, int col) const; // Cho phép Game class kiểm tra vị trí click
@@ -25,6 +26,10 @@ public:
     void loadGame();
     void undoMove();
     void redoMove();
+    void passTurn();
+    void handleEndGame();
+    std::pair<float, float> calculateFinalScores() const;
+
 
     sf::RenderWindow window;
     Board board;
@@ -43,6 +48,8 @@ public:
     sf::Font font;
     sf::Text turnIndicatorText;
     sf::Text notificationText;
+
+    int consecutivePasses;
 };
 
 #endif // GAME_H

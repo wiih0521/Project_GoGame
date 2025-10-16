@@ -100,14 +100,14 @@ bool Board::placeStone(int row, int col, Stone player) {
     // Kiểm tra các ô xung quanh nước đi vừa rồi
     int dr[] = { -1, 1, 0, 0 };
     int dc[] = { 0, 0, -1, 1 };
-
+    int numCapture = 0;
     for (int i = 0; i < 4; ++i) {
         int nr = row + dr[i];
         int nc = col + dc[i];
         if (isWithinBounds(nr, nc) && grid[nr][nc] == opponent) {
             // Chỉ kiểm tra nếu nhóm quân đối phương còn sống sau nước đi này
             if (countLiberties(nr, nc, opponent) == 0) {
-                removeGroup(nr, nc, opponent);
+                numCapture += removeGroup(nr, nc, opponent);
                 capturedAny = true;
             }
         }
@@ -130,7 +130,14 @@ bool Board::placeStone(int row, int col, Stone player) {
         return false;
 	}
     lastGrid = originalGrid; // Cập nhật trạng thái trước đó để kiểm tra Ko
-       
+    if (player == Stone::Black) {
+        // Đen đi, bắt quân của Trắng
+        blackCapture += numCapture;
+    }
+    else {
+        // Trắng đi, bắt quân của Đen
+        whiteCapture += numCapture;
+    }
     return true;
 }
 
@@ -243,9 +250,9 @@ void Board::printToConsole(const std::vector<std::vector<Stone>>& boardToPrint, 
 }
 
 // Hàm loại bỏ một nhóm quân cờ
-void Board::removeGroup(int startRow, int startCol, Stone playerToRemove) {
+int Board::removeGroup(int startRow, int startCol, Stone playerToRemove) {
     if (!isWithinBounds(startRow, startCol) || grid[startRow][startCol] != playerToRemove) {
-        return; // Không phải quân cần xóa hoặc ô trống
+        return 0; // Không phải quân cần xóa hoặc ô trống
     }
 
     std::queue<std::pair<int, int>> q;
@@ -254,10 +261,11 @@ void Board::removeGroup(int startRow, int startCol, Stone playerToRemove) {
 
     int dr[] = { -1, 1, 0, 0 };
     int dc[] = { 0, 0, -1, 1 };
-
+    int numCapture = 0;
     while (!q.empty()) {
         std::pair<int, int> current = q.front();
         q.pop();
+        ++numCapture;
 
         for (int i = 0; i < 4; ++i) {
             int nr = current.first + dr[i];
@@ -269,11 +277,75 @@ void Board::removeGroup(int startRow, int startCol, Stone playerToRemove) {
             }
         }
     }
+    return numCapture;
+}
+
+std::pair<int, int> Board::calculateScores() const {
+    int blackScore = 0;
+    int whiteScore = 0;
+    std::vector<std::vector<bool>> visited(boardSize, std::vector<bool>(boardSize, false));
+
+    for (int r = 0; r < boardSize; ++r) {
+        for (int c = 0; c < boardSize; ++c) {
+            // Nếu là ô trống và chưa được thăm, bắt đầu khám phá lãnh thổ
+            if (grid[r][c] == Stone::None && !visited[r][c]) {
+                std::queue<std::pair<int, int>> q;
+                std::vector<std::pair<int, int>> territoryPoints; // Lưu các ô trong vùng lãnh thổ hiện tại
+                bool touchesBlack = false;
+                bool touchesWhite = false;
+
+                q.push({ r, c });
+                visited[r][c] = true;
+                territoryPoints.push_back({ r, c });
+
+                while (!q.empty()) {
+                    std::pair<int, int> current = q.front();
+                    q.pop();
+
+                    // Kiểm tra 4 hướng xung quanh
+                    for (int i = 0; i < 4; ++i) {
+                        int nr = current.first + dr[i];
+                        int nc = current.second + dc[i];
+
+                        if (isWithinBounds(nr, nc)) {
+                            if (grid[nr][nc] == Stone::None && !visited[nr][nc]) {
+                                visited[nr][nc] = true;
+                                q.push({ nr, nc });
+                                territoryPoints.push_back({ nr, nc });
+                            }
+                            else if (grid[nr][nc] == Stone::Black) {
+                                touchesBlack = true;
+                            }
+                            else if (grid[nr][nc] == Stone::White) {
+                                touchesWhite = true;
+                            }
+                        }
+                    }
+                }
+                if (touchesBlack && !touchesWhite) {
+                    blackScore += territoryPoints.size();
+                }
+                else if (!touchesBlack && touchesWhite) {
+                    whiteScore += territoryPoints.size();
+                }
+            }
+        }
+    }
+
+    // Theo luật chơi, điểm cuối cùng còn bao gồm cả số quân đã bắt được.
+    // Hiện tại, hàm này chỉ đếm lãnh thổ. Bạn cần cộng thêm số quân đã bắt được trong lớp Game.
+    return { blackScore, whiteScore };
 }
 
 
 Stone Board::getStone(int row, int col) const { return grid[row][col]; }
 int Board::getSize() const { return boardSize; }
-void Board::reset() { grid.assign(boardSize, std::vector<Stone>(boardSize, Stone::None)); }
+void Board::reset()
+{
+    grid.assign(boardSize, std::vector<Stone>(boardSize, Stone::None));
+    lastGrid.assign(boardSize, std::vector<Stone>(boardSize, Stone::None));
+    whiteCapture = 0;
+    blackCapture = 0;
+}
 void Board::setBoardState(const std::vector<std::vector<Stone>>& state) { grid = state; }
 const std::vector<std::vector<Stone>>& Board::getBoardState() const { return grid; }
