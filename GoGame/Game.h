@@ -14,7 +14,6 @@ public:
     
     Game();
     void run();
-    bool isWithinBounds(int row, int col) const; // Cho phép Game class kiểm tra vị trí click
 
     void processEvents();
     void update();
