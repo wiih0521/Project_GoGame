@@ -38,7 +38,7 @@ public:
     std::vector<std::vector<Stone>> lastGrid;
     sf::Texture blackStoneTexture, whiteStoneTexture;
     sf::Sprite blackStoneSprite, whiteStoneSprite;
-    
+
     sf::Texture BottomboardTexture;
     sf::Sprite BottomboardSprite;
 
@@ -69,14 +69,14 @@ public:
     sf::Texture BackGroundTexture;
     sf::Sprite BackGroundSprite;
 
-        /*BoardAssets() {
-            if (!boardTexture.loadFromFile("assets/images/board.png")) {
-                std::cerr << "Error loading board texture\n";
-            }
-            boardSprite.setTexture(boardTexture);
-        }*/
+    /*BoardAssets() {
+        if (!boardTexture.loadFromFile("assets/images/board.png")) {
+            std::cerr << "Error loading board texture\n";
+        }
+        boardSprite.setTexture(boardTexture);
+    }*/
 
-    
+
     int countLiberties(int row, int col, Stone player);
     // void findAndRemoveCapturedStones(int row, int col, Stone opponentPlayer); // Không còn dùng
     // bool isSuicideMove(int row, int col, Stone player); // Không còn dùng
