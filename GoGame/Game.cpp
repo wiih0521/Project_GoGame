@@ -146,6 +146,7 @@ void Game::handlePlayingEvents(const sf::Event& event) {
         if (event.key.code == sf::Keyboard::Z) { undoMove(); } // undoMove đã có updateNotification
         if (event.key.code == sf::Keyboard::Y) { redoMove(); } // redoMove đã có updateNotification
         if (event.key.code == sf::Keyboard::R) { startNewGame(currentMode, currentDifficulty); } // startNewGame đã có
+        if (event.key.code == sf::Keyboard::P) { passTurn(); } // startNewGame đã có
         if (event.key.code == sf::Keyboard::Escape) { // Trở về menu chính từ game
             currentGameState = GameState::MainMenu;
             updateNotification("Returning to Main Menu.");
@@ -347,6 +348,7 @@ void Game::handlePlayerInput(const sf::Vector2i& mousePos) {
         while (!redoHistory.empty()) redoHistory.pop();
         updateNotification("");
         if (isSoundEnabled) placeSound.play();
+		consecutivePasses = 0; // Reset pass count on valid move
     }
     else {
         updateNotification("Invalid move: spot taken or suicide move.");
