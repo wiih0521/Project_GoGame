@@ -77,12 +77,13 @@ public:
     }*/
 
 
-    int countLiberties(int row, int col, Stone player);
+    int countLiberties(int row, int col, Stone player) const;
     // void findAndRemoveCapturedStones(int row, int col, Stone opponentPlayer); // Không còn dùng
     // bool isSuicideMove(int row, int col, Stone player); // Không còn dùng
 
     // THÊM DÒNG NÀY VÀO Board.h
     int removeGroup(int startRow, int startCol, Stone playerToRemove);
+    const std::vector<std::vector<Stone>>& getLastBoardState() const;
 };
 
 #endif // BOARD_H

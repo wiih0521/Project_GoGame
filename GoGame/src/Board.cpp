@@ -1,9 +1,9 @@
-﻿#include "Board.h"
+﻿#include "../include/Board.h"
 #include <vector>
 #include <iostream>
 #include <queue>
 #include <set>
-#include "Game.h"
+#include "../include/Game.h"
 
 Board::Board(int size) : boardSize(size), grid(size, std::vector<Stone>(size, Stone::None)), lastGrid(size, std::vector<Stone>(size, Stone::None)) {
     // Tải assets - bạn cần đảm bảo các tệp này tồn tại
@@ -145,7 +145,7 @@ bool Board::placeStone(int row, int col, Stone player) {
 
 
 // Hàm đếm tự do cho một nhóm quân bằng BFS
-int Board::countLiberties(int startRow, int startCol, Stone player) {
+int Board::countLiberties(int startRow, int startCol, Stone player) const {
     if (!isWithinBounds(startRow, startCol) || grid[startRow][startCol] != player) {
         return 0; // Không phải quân của người chơi hoặc ô trống
     }
@@ -335,6 +335,11 @@ std::pair<int, int> Board::calculateScores() const {
     // Theo luật chơi, điểm cuối cùng còn bao gồm cả số quân đã bắt được.
     // Hiện tại, hàm này chỉ đếm lãnh thổ. Bạn cần cộng thêm số quân đã bắt được trong lớp Game.
     return { blackScore, whiteScore };
+}
+
+// THÊM HÀM NÀY VÀO CUỐI FILE Board.cpp
+const std::vector<std::vector<Stone>>& Board::getLastBoardState() const {
+    return lastGrid;
 }
 
 
