@@ -54,7 +54,6 @@ private:
 
     // **MỚI:** Hàm mô phỏng đặt quân cho AI mà không xử lý Ko và không sửa đổi lastGrid
     // Phải được khai báo ở đây!
-    Board placeStoneSimulated(const Board& currentBoard, int row, int col, Stone player) const;
 };
 
 #endif // AI_H
