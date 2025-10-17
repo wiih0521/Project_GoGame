@@ -340,9 +340,16 @@ void Game::setupMainMenu() {
     }
 }
 
+// THAY THẾ HÀM NÀY TRONG FILE Game.cpp
+
 void Game::setupSettingsMenu() {
-    float startY = window.getSize().y / 2.0f - 50;
-    float spacing = 50.0f;
+    // THAY ĐỔI: Tăng giá trị Y để đẩy menu xuống dưới tiêu đề.
+    // Thay vì trừ 50, chúng ta sẽ cộng 50.
+    float startY = window.getSize().y / 2.0f + 50.0f;
+
+    // TÙY CHỌN: Tăng khoảng cách giữa các nút cho thoáng hơn.
+    float spacing = 60.0f;
+
     settingsButtons.clear();
 
     // Sound Toggle
