@@ -45,10 +45,16 @@ private:
     int countDefensiveStructures(const Board& board, Stone player) const;
     int countTerritory(const Board& board, Stone player) const;
     int countAliveGroups(const Board& board, Stone player) const;
+
+    // Hàm trợ giúp cho việc tìm nhóm quân và mắt
     void findGroup(const Board& board, int r, int c, Stone player,
         std::vector<std::pair<int, int>>& group,
         std::vector<std::vector<bool>>& visited) const;
     int countEyesForGroup(const Board& board, const std::vector<std::pair<int, int>>& group) const;
+
+    // **MỚI:** Hàm mô phỏng đặt quân cho AI mà không xử lý Ko và không sửa đổi lastGrid
+    // Phải được khai báo ở đây!
+    Board placeStoneSimulated(const Board& currentBoard, int row, int col, Stone player) const;
 };
 
 #endif // AI_H
