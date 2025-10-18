@@ -58,8 +58,8 @@ void Board::draw(sf::RenderWindow& window) {
             else if (c == boardSize - 1) partSprite = &RightboardSprite;
             else partSprite = &CenterboardSprite;
             if (partSprite) {
-                partSprite->setPosition(c * spacing + offset - (*partSprite).getGlobalBounds().width / 2,
-                    r * spacing + offset - (*partSprite).getGlobalBounds().height / 2); 
+                partSprite->setPosition(c * spacing + offset - (*partSprite).getGlobalBounds().width / 2 + LeftborderSize,
+                    r * spacing + offset - (*partSprite).getGlobalBounds().height / 2 + LeftborderSize);
                 window.draw(*partSprite);
             }
         }
@@ -69,8 +69,8 @@ void Board::draw(sf::RenderWindow& window) {
         for (int c = 0; c < boardSize; ++c) {
             if (grid[r][c] != Stone::None) {
                 sf::Sprite& stoneSprite = (grid[r][c] == Stone::Black) ? blackStoneSprite : whiteStoneSprite;
-                stoneSprite.setPosition(c * spacing + offset - stoneSprite.getGlobalBounds().width / 2,
-                    r * spacing + offset - stoneSprite.getGlobalBounds().height / 2);
+                stoneSprite.setPosition(c * spacing + offset - stoneSprite.getGlobalBounds().width / 2 + LeftborderSize,
+                    r * spacing + offset - stoneSprite.getGlobalBounds().height / 2 + LeftborderSize);
                 window.draw(stoneSprite);
             }
         }

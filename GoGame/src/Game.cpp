@@ -1,4 +1,5 @@
 ﻿#include "../include/Game.h"
+#include "../include/Board.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>   
@@ -9,17 +10,15 @@
 #include <thread> // Add this at the top of the file for std::this_thread::sleep_for
 #include <chrono> // Add this for std::chrono::milliseconds
 
-const int BoardSize = 5; // size of game board
+const int BoardSize = 19; // size of game board
 const int MaxBoardSize = 19; // maximum size of game board
 const int CellSize = 50; // base on size of (c).png
 const float notificationSize = 20;
-const float borderSize = 40;
-const float MinSize = BoardSize * CellSize + borderSize;
-const float MaxSize = MaxBoardSize * CellSize + borderSize;
+const float totalBoardPixelSize = BoardSize * CellSize;
 
 const sf::Color darkGreen(0, 100, 0);
 
-Game::Game() : window(sf::VideoMode(BoardSize * CellSize + borderSize, BoardSize* CellSize + borderSize + notificationSize), "Go Game"), board(BoardSize), isGameOver(false), currentGameState(GameState::MainMenu), isSoundEnabled(true) {
+Game::Game() : window(sf::VideoMode(), "Go Game", sf::Style::Fullscreen), board(BoardSize), isGameOver(false), currentGameState(GameState::MainMenu), isSoundEnabled(true) {
     if (!font.loadFromFile("assets/fonts/arial.ttf")) {
         std::cerr << "Error loading font\n";
     }
@@ -45,36 +44,36 @@ Game::Game() : window(sf::VideoMode(BoardSize * CellSize + borderSize, BoardSize
     // =======================================================
     // Lớp phủ
     gameOverOverlay.setSize(sf::Vector2f(window.getSize()));
-    gameOverOverlay.setFillColor(sf::Color(0, 0, 0, 150)); // Màu đen, bán trong suốt
+    gameOverOverlay.setFillColor(sf::Color(0, 0, 0, 80)); // Màu đen, trong suốt nhẹ
 
     // Tiêu đề "GAME OVER"
     gameOverTitleText.setFont(font);
     gameOverTitleText.setString("GAME OVER");
-    gameOverTitleText.setCharacterSize(std::min(70.0f, 70 * 2 * (window.getSize().x / MaxSize)));
+    gameOverTitleText.setCharacterSize(70.0f);
     gameOverTitleText.setFillColor(sf::Color::Red);
     gameOverTitleText.setStyle(sf::Text::Bold);
 
     // Text điểm số
     finalScoresText.setFont(font);
-    finalScoresText.setCharacterSize(std::min(30.0f, 30 * 2 * (window.getSize().x / MaxSize)));
+    finalScoresText.setCharacterSize(30.0f);
     finalScoresText.setFillColor(sf::Color::White);
 
     // Text người thắng
     winnerMessageText.setFont(font);
-    winnerMessageText.setCharacterSize(std::min(45.0f, 45 * 2 * (window.getSize().x / MaxSize)));
+    winnerMessageText.setCharacterSize(45.0f);
     winnerMessageText.setFillColor(sf::Color::Yellow);
     winnerMessageText.setStyle(sf::Text::Bold);
 
     // Nút "Chơi lại"
     playAgainButton.setFont(font);
     playAgainButton.setString("Play Again");
-    playAgainButton.setCharacterSize(std::min(40.0f, 40 * 2 * (window.getSize().x / MaxSize)));
+    playAgainButton.setCharacterSize(40.0f);
     playAgainButton.setFillColor(sf::Color::White);
 
     // Nút "Về Menu chính"
     mainMenuButton.setFont(font);
     mainMenuButton.setString("Back to Main Menu");
-    mainMenuButton.setCharacterSize(std::min(40.0f, 40 * 2 * (window.getSize().x / MaxSize)));
+    mainMenuButton.setCharacterSize(40.0f);
     mainMenuButton.setFillColor(sf::Color::White);
     // =======================================================
 
@@ -267,9 +266,6 @@ void Game::updatePlaying() {
             updateNotification("AI passed.");
 			Game::passTurn(); // Nếu AI không thể di chuyển, coi như nó pass
             std::cerr << "AI could not find a valid move or passed turn or game is over.\n";
-            // Nếu AI không thể di chuyển, có thể coi là pass hoặc game over tùy luật
-            // Vẫn là lượt của AI, AI có thể thử lại ở update tiếp theo, hoặc game có thể kết thúc.
-            // Để đơn giản, ở đây AI cứ thử lại.
         }
     }
 }
@@ -283,7 +279,7 @@ void Game::renderMainMenu() {
 
 void Game::renderPlaying() {
     board.draw(window);
-    window.draw(turnIndicatorText); // <== THÊM LẠI DÒNG NÀY ĐỂ VẼ TEXT LƯỢT ĐI
+    window.draw(turnIndicatorText); 
     window.draw(notificationText);
     window.draw(keyblindguideText);
 }
@@ -312,8 +308,8 @@ void Game::setupMainMenu() {
         {"Exit", GameState::GameOver, GameMode::PlayerVsPlayer, Difficulty::Easy}
     };
 
-	float CharSize = std::min(40.f, 90 * (window.getSize().x / MaxSize));
-	float SpaceSize = std::min(75.f, 200 * (window.getSize().y / MaxSize));
+	float CharSize = 40.f;
+    float SpaceSize = 75.f;
     float totalHeight = buttonData.size() * (CharSize / 2 + SpaceSize / 2); // Tổng chiều cao của tất cả các nút
 
     float startY = window.getSize().y / 2.0f - totalHeight / 2.0f;
@@ -339,8 +335,6 @@ void Game::setupMainMenu() {
         mainMenuButtons[i].sfText.setPosition(window.getSize().x / 2.0f, startY + i * SpaceSize);
     }
 }
-
-// THAY THẾ HÀM NÀY TRONG FILE Game.cpp
 
 void Game::setupSettingsMenu() {
     // THAY ĐỔI: Tăng giá trị Y để đẩy menu xuống dưới tiêu đề.
@@ -422,8 +416,8 @@ void Game::handlePlayerInput(const sf::Vector2i& mousePos) {
     float spacing = CellSize;
     float offset = 50;
 
-    int col = static_cast<int>((mousePos.x - offset + spacing / 2) / spacing);
-    int row = static_cast<int>((mousePos.y - offset + spacing / 2) / spacing);
+    int col = static_cast<int>((mousePos.x - offset - LeftborderSize + spacing / 2) / spacing);
+    int row = static_cast<int>((mousePos.y - offset - LeftborderSize + spacing / 2) / spacing);
 
     if (!board.isWithinBounds(row, col)) {
         updateNotification("Invalid position click.");
@@ -539,8 +533,6 @@ void Game::redoMove() {
     }
 }
 
-// Thay thế hàm handleEndGame() trống bằng hàm này.
-// Lưu ý: Nó phải là một phương thức của lớp Game.
 void Game::handleEndGame() {
 	std::cerr << "Game Over triggered.\n";
     isGameOver = true;
@@ -575,23 +567,23 @@ void Game::handleEndGame() {
     // Hàm trợ giúp để căn giữa text
     auto centerText = [](sf::Text& text) {
         sf::FloatRect bounds = text.getLocalBounds();
-        text.setOrigin(bounds.left + bounds.width / 2.0f, bounds.top + bounds.height / 2.0f);
+        text.setOrigin(bounds.left + bounds.width / 2.0f - (totalBoardPixelSize - LeftborderSize) / 2, bounds.top + bounds.height / 2.0f);
         };
 
     centerText(gameOverTitleText);
-    gameOverTitleText.setPosition(centerX, std::min(150.0f, 150.0f * 2 * (window.getSize().x / MaxSize)));
+    gameOverTitleText.setPosition(centerX, 150.0f);
 
     centerText(winnerMessageText);
-    winnerMessageText.setPosition(centerX, std::min(250.0f, 250 * 2 * (window.getSize().x / MaxSize)));
+    winnerMessageText.setPosition(centerX, 250.0f);
 
     centerText(finalScoresText);
-    finalScoresText.setPosition(centerX, std::min(350.0f, 350.0f * 2 * (window.getSize().x / MaxSize)));
+    finalScoresText.setPosition(centerX, 350.0f);
 
     centerText(playAgainButton);
-    playAgainButton.setPosition(centerX, std::min(500.0f, 420.0f * 2 * (window.getSize().x / MaxSize)));
+    playAgainButton.setPosition(centerX, 500.0f);
 
     centerText(mainMenuButton);
-    mainMenuButton.setPosition(centerX, std::min(580.0f, 490.0f * 2 * (window.getSize().x / MaxSize)));
+    mainMenuButton.setPosition(centerX, 580.0f);
 }
 
 void Game::passTurn() {
