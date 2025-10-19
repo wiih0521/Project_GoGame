@@ -1,5 +1,5 @@
-﻿#ifndef GAME_H
-#define GAME_H
+﻿#ifndef UI_H
+#define UI_H
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp> // Thêm cho âm thanh
@@ -9,7 +9,7 @@
 #include "Board.h"
 #include "AI.h"
 
-// Định nghĩa các trạng thái của game
+// Định nghĩa các trạng thái của gamezzz
 enum class GameState {
     MainMenu,
     Playing,
@@ -35,10 +35,10 @@ struct MenuItem {
 };
 
 
-class Game {
+class UI {
 public:
     
-    Game();
+    UI();
     void run();
 
 private:
@@ -97,18 +97,17 @@ private:
     sf::Text EndGameText;
     sf::Text keyblindguideText;
 
-    // =======================================================
-    // == THÊM MỚI: CÁC THÀNH PHẦN CHO MÀN HÌNH GAME OVER ==
-    // =======================================================
+	// Game Over Screen Elements
     sf::RectangleShape gameOverOverlay; // Lớp phủ mờ
     sf::Text gameOverTitleText;      // Chữ "GAME OVER"
     sf::Text finalScoresText;        // Text hiển thị điểm
     sf::Text winnerMessageText;      // Text thông báo người thắng
     sf::Text playAgainButton;        // Nút "Chơi lại"
     sf::Text mainMenuButton;         // Nút "Về Menu chính"
-    // =======================================================
 
     // -- Các thành phần mới cho Menu và Settings --
+	sf::Texture mainmenuBackgroundTexture;
+	sf::Sprite mainmenuBackgroundSprite;
     std::vector<MenuItem> mainMenuButtons;
     std::vector<MenuItem> settingsButtons; // Menu items for settings
     sf::RectangleShape menuBackground; // Hình nền cho menu
@@ -128,4 +127,4 @@ private:
 
 };
 
-#endif // GAME_H
+#endif // UI_H

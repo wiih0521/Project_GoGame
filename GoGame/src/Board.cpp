@@ -3,7 +3,7 @@
 #include <iostream>
 #include <queue>
 #include <set>
-#include "../include/Game.h"
+#include "../include/UI.h"
 
 Board::Board(int size) : boardSize(size), grid(size, std::vector<Stone>(size, Stone::None)), lastGrid(size, std::vector<Stone>(size, Stone::None)) {
     // Tải assets - bạn cần đảm bảo các tệp này tồn tại

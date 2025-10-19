@@ -1,7 +1,7 @@
-#include "../include/Game.h"
+#include "../include/UI.h"
 
 int main() {
-    Game goGame;
+    UI goGame;
     goGame.run();
     return 0;
 }
