@@ -11,7 +11,7 @@
 #include <chrono> // Add this for std::chrono::milliseconds
 
 const int BoardSize = 19; // size of game board
-const int MaxBoardSize = 19; // maximum size of game board
+//const int MaxBoardSize = 19; // maximum size of game board
 const int CellSize = 50; // base on size of (c).png
 const float notificationSize = 20;
 const float totalBoardPixelSize = BoardSize * CellSize;
@@ -83,6 +83,77 @@ UI::UI() : window(sf::VideoMode(), "Go Game", sf::Style::Fullscreen), board(Boar
     // Khởi tạo nền menu (có thể thay bằng hình ảnh)
     menuBackground.setSize(sf::Vector2f(window.getSize()));
     menuBackground.setFillColor(sf::Color(50, 50, 50, 180)); // Nền mờ
+
+    // Tải assets - bạn cần đảm bảo các tệp này tồn tại
+    if (!BottomboardTexture.loadFromFile("assets/images/b.png")) std::cerr << "Error loading board texture\n";
+    if (!BottomLeftboardTexture.loadFromFile("assets/images/bl.png")) std::cerr << "Error loading board texture\n";
+    if (!BottomRightboardTexture.loadFromFile("assets/images/br.png")) std::cerr << "Error loading board texture\n";
+    if (!UpperboardTexture.loadFromFile("assets/images/u.png")) std::cerr << "Error loading board texture\n";
+    if (!UpperLeftboardTexture.loadFromFile("assets/images/ul.png")) std::cerr << "Error loading board texture\n";
+    if (!UpperRightboardTexture.loadFromFile("assets/images/ur.png")) std::cerr << "Error loading board texture\n";
+    if (!LeftboardTexture.loadFromFile("assets/images/l.png")) std::cerr << "Error loading board texture\n";
+    if (!RightboardTexture.loadFromFile("assets/images/r.png")) std::cerr << "Error loading board texture\n";
+    if (!CenterboardTexture.loadFromFile("assets/images/c.png")) std::cerr << "Error loading board texture\n";
+    if (!BackGroundTexture.loadFromFile("assets/images/background.png")) std::cerr << "Error loading board texture\n";
+
+    if (!blackStoneTexture.loadFromFile("assets/images/black_stone.png")) std::cerr << "Error loading black stone texture\n";
+    if (!whiteStoneTexture.loadFromFile("assets/images/white_stone.png")) std::cerr << "Error loading white stone texture\n";
+
+    BottomboardSprite.setTexture(BottomboardTexture);
+    BottomLeftboardSprite.setTexture(BottomLeftboardTexture);
+    BottomRightboardSprite.setTexture(BottomRightboardTexture);
+    UpperboardSprite.setTexture(UpperboardTexture);
+    UpperLeftboardSprite.setTexture(UpperLeftboardTexture);
+    UpperRightboardSprite.setTexture(UpperRightboardTexture);
+    LeftboardSprite.setTexture(LeftboardTexture);
+    RightboardSprite.setTexture(RightboardTexture);
+    CenterboardSprite.setTexture(CenterboardTexture);
+    BackGroundSprite.setTexture(BackGroundTexture);
+
+    blackStoneSprite.setTexture(blackStoneTexture);
+    whiteStoneSprite.setTexture(whiteStoneTexture);
+}
+
+void UI::draw(sf::RenderWindow& window) {
+	const int boardSize = board.getSize();
+
+    // window.draw(boardSprite);
+
+    float spacing = CenterboardSprite.getGlobalBounds().width; // Khoảng cách giữa các giao điểm
+    float offset = 50.0f; // Lề
+
+    // std::cerr << CenterboardSprite.getGlobalBounds().width << std::endl;
+
+    for (int r = 0; r < boardSize; ++r) {
+        for (int c = 0; c < boardSize; ++c) {
+            sf::Sprite* partSprite = nullptr;
+            if (r == 0 && c == 0) partSprite = &UpperLeftboardSprite;
+            else if (r == 0 && c == boardSize - 1) partSprite = &UpperRightboardSprite;
+            else if (r == boardSize - 1 && c == 0) partSprite = &BottomLeftboardSprite;
+            else if (r == boardSize - 1 && c == boardSize - 1) partSprite = &BottomRightboardSprite;
+            else if (r == 0) partSprite = &UpperboardSprite;
+            else if (r == boardSize - 1) partSprite = &BottomboardSprite;
+            else if (c == 0) partSprite = &LeftboardSprite;
+            else if (c == boardSize - 1) partSprite = &RightboardSprite;
+            else partSprite = &CenterboardSprite;
+            if (partSprite) {
+                partSprite->setPosition(c * spacing + offset - (*partSprite).getGlobalBounds().width / 2 + LeftborderSize,
+                    r * spacing + offset - (*partSprite).getGlobalBounds().height / 2 + LeftborderSize);
+                window.draw(*partSprite);
+            }
+        }
+    }
+
+    for (int r = 0; r < boardSize; ++r) {
+        for (int c = 0; c < boardSize; ++c) {
+            if (board.grid[r][c] != Stone::None) {
+                sf::Sprite& stoneSprite = (board.grid[r][c] == Stone::Black) ? blackStoneSprite : whiteStoneSprite;
+                stoneSprite.setPosition(c * spacing + offset - stoneSprite.getGlobalBounds().width / 2 + LeftborderSize,
+                    r * spacing + offset - stoneSprite.getGlobalBounds().height / 2 + LeftborderSize);
+                window.draw(stoneSprite);
+            }
+        }
+    }
 }
 
 void UI::run() {
@@ -272,7 +343,7 @@ void UI::renderMainMenu() {
 
 void UI::renderPlaying() {
     // window.draw(mainmenuBackgroundSprite);
-    board.draw(window);
+    draw(window);
     window.draw(turnIndicatorText); 
     window.draw(notificationText);
     window.draw(keyblindguideText);

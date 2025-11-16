@@ -40,6 +40,7 @@ public:
     
     UI();
     void run();
+    void draw(sf::RenderWindow& window);
 
 private:
     void processEvents();
@@ -125,6 +126,39 @@ private:
 
     int consecutivePasses;
 
+	// Textures and Sprites for board and stones
+    sf::Texture blackStoneTexture, whiteStoneTexture;
+    sf::Sprite blackStoneSprite, whiteStoneSprite;
+
+    sf::Texture BottomboardTexture;
+    sf::Sprite BottomboardSprite;
+
+    sf::Texture BottomLeftboardTexture;
+    sf::Sprite BottomLeftboardSprite;
+
+    sf::Texture BottomRightboardTexture;
+    sf::Sprite BottomRightboardSprite;
+
+    sf::Texture UpperboardTexture;
+    sf::Sprite UpperboardSprite;
+
+    sf::Texture UpperLeftboardTexture;
+    sf::Sprite UpperLeftboardSprite;
+
+    sf::Texture UpperRightboardTexture;
+    sf::Sprite UpperRightboardSprite;
+
+    sf::Texture LeftboardTexture;
+    sf::Sprite LeftboardSprite;
+
+    sf::Texture RightboardTexture;
+    sf::Sprite RightboardSprite;
+
+    sf::Texture CenterboardTexture;
+    sf::Sprite CenterboardSprite;
+
+    sf::Texture BackGroundTexture;
+    sf::Sprite BackGroundSprite;
 };
 
 #endif // UI_H

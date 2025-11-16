@@ -20,9 +20,8 @@ const int dc[] = { 0, 0, -1, 1 };
 const float LeftborderSize = 40;
 class Board {
 public:
-    Board(int size = 19);
+    Board(const int size = 19);
 
-    void draw(sf::RenderWindow& window);
     bool placeStone(int row, int col, Stone player);
     Stone getStone(int row, int col) const;
     int getSize() const;
@@ -30,45 +29,14 @@ public:
     void setBoardState(const std::vector<std::vector<Stone>>& state);
     const std::vector<std::vector<Stone>>& getBoardState() const;
     bool isWithinBounds(int row, int col) const;
-    int boardSize,whiteCapture, blackCapture;
+    int boardSize;
+    int whiteCapture, blackCapture;
     void printToConsole() const;
     void printToConsole(const std::vector<std::vector<Stone>>& boardToPrint, const std::string& title) const;
     std::pair<int, int> calculateScores() const;
 
     std::vector<std::vector<Stone>> grid;
     std::vector<std::vector<Stone>> lastGrid;
-    sf::Texture blackStoneTexture, whiteStoneTexture;
-    sf::Sprite blackStoneSprite, whiteStoneSprite;
-
-    sf::Texture BottomboardTexture;
-    sf::Sprite BottomboardSprite;
-
-    sf::Texture BottomLeftboardTexture;
-    sf::Sprite BottomLeftboardSprite;
-
-    sf::Texture BottomRightboardTexture;
-    sf::Sprite BottomRightboardSprite;
-
-    sf::Texture UpperboardTexture;
-    sf::Sprite UpperboardSprite;
-
-    sf::Texture UpperLeftboardTexture;
-    sf::Sprite UpperLeftboardSprite;
-
-    sf::Texture UpperRightboardTexture;
-    sf::Sprite UpperRightboardSprite;
-
-    sf::Texture LeftboardTexture;
-    sf::Sprite LeftboardSprite;
-
-    sf::Texture RightboardTexture;
-    sf::Sprite RightboardSprite;
-
-    sf::Texture CenterboardTexture;
-    sf::Sprite CenterboardSprite;
-
-    sf::Texture BackGroundTexture;
-    sf::Sprite BackGroundSprite;
 
     /*BoardAssets() {
         if (!boardTexture.loadFromFile("assets/images/board.png")) {

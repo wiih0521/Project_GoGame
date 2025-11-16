@@ -6,75 +6,7 @@
 #include "../include/UI.h"
 
 Board::Board(int size) : boardSize(size), grid(size, std::vector<Stone>(size, Stone::None)), lastGrid(size, std::vector<Stone>(size, Stone::None)) {
-    // Tải assets - bạn cần đảm bảo các tệp này tồn tại
-
-    if (!BottomboardTexture.loadFromFile("assets/images/b.png")) std::cerr << "Error loading board texture\n";
-    if (!BottomLeftboardTexture.loadFromFile("assets/images/bl.png")) std::cerr << "Error loading board texture\n";
-    if (!BottomRightboardTexture.loadFromFile("assets/images/br.png")) std::cerr << "Error loading board texture\n";
-    if (!UpperboardTexture.loadFromFile("assets/images/u.png")) std::cerr << "Error loading board texture\n";
-    if (!UpperLeftboardTexture.loadFromFile("assets/images/ul.png")) std::cerr << "Error loading board texture\n";
-    if (!UpperRightboardTexture.loadFromFile("assets/images/ur.png")) std::cerr << "Error loading board texture\n";
-    if (!LeftboardTexture.loadFromFile("assets/images/l.png")) std::cerr << "Error loading board texture\n";
-    if (!RightboardTexture.loadFromFile("assets/images/r.png")) std::cerr << "Error loading board texture\n";
-    if (!CenterboardTexture.loadFromFile("assets/images/c.png")) std::cerr << "Error loading board texture\n";
-    if (!BackGroundTexture.loadFromFile("assets/images/background.png")) std::cerr << "Error loading board texture\n";
-
-    if (!blackStoneTexture.loadFromFile("assets/images/black_stone.png")) std::cerr << "Error loading black stone texture\n";
-    if (!whiteStoneTexture.loadFromFile("assets/images/white_stone.png")) std::cerr << "Error loading white stone texture\n";
-
-    BottomboardSprite.setTexture(BottomboardTexture);
-    BottomLeftboardSprite.setTexture(BottomLeftboardTexture);
-    BottomRightboardSprite.setTexture(BottomRightboardTexture);
-    UpperboardSprite.setTexture(UpperboardTexture);
-    UpperLeftboardSprite.setTexture(UpperLeftboardTexture);
-    UpperRightboardSprite.setTexture(UpperRightboardTexture);
-    LeftboardSprite.setTexture(LeftboardTexture);
-    RightboardSprite.setTexture(RightboardTexture);
-    CenterboardSprite.setTexture(CenterboardTexture);
-    BackGroundSprite.setTexture(BackGroundTexture);
-
-    blackStoneSprite.setTexture(blackStoneTexture);
-    whiteStoneSprite.setTexture(whiteStoneTexture);
-}
-
-void Board::draw(sf::RenderWindow& window) {
-    // window.draw(boardSprite);
-
-    float spacing = CenterboardSprite.getGlobalBounds().width; // Khoảng cách giữa các giao điểm
-    float offset = 50.0f; // Lề
-
-    // std::cerr << CenterboardSprite.getGlobalBounds().width << std::endl;
-
-    for (int r = 0; r < boardSize; ++r) {
-        for (int c = 0; c < boardSize; ++c) {
-            sf::Sprite* partSprite = nullptr;
-            if (r == 0 && c == 0) partSprite = &UpperLeftboardSprite;
-            else if (r == 0 && c == boardSize - 1) partSprite = &UpperRightboardSprite;
-            else if (r == boardSize - 1 && c == 0) partSprite = &BottomLeftboardSprite;
-            else if (r == boardSize - 1 && c == boardSize - 1) partSprite = &BottomRightboardSprite;
-            else if (r == 0) partSprite = &UpperboardSprite;
-            else if (r == boardSize - 1) partSprite = &BottomboardSprite;
-            else if (c == 0) partSprite = &LeftboardSprite;
-            else if (c == boardSize - 1) partSprite = &RightboardSprite;
-            else partSprite = &CenterboardSprite;
-            if (partSprite) {
-                partSprite->setPosition(c * spacing + offset - (*partSprite).getGlobalBounds().width / 2 + LeftborderSize,
-                    r * spacing + offset - (*partSprite).getGlobalBounds().height / 2 + LeftborderSize);
-                window.draw(*partSprite);
-            }
-        }
-    }
-
-    for (int r = 0; r < boardSize; ++r) {
-        for (int c = 0; c < boardSize; ++c) {
-            if (grid[r][c] != Stone::None) {
-                sf::Sprite& stoneSprite = (grid[r][c] == Stone::Black) ? blackStoneSprite : whiteStoneSprite;
-                stoneSprite.setPosition(c * spacing + offset - stoneSprite.getGlobalBounds().width / 2 + LeftborderSize,
-                    r * spacing + offset - stoneSprite.getGlobalBounds().height / 2 + LeftborderSize);
-                window.draw(stoneSprite);
-            }
-        }
-    }
+    
 }
 
 bool Board::isWithinBounds(int row, int col) const {
