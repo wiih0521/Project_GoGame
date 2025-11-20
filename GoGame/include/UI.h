@@ -7,31 +7,35 @@
 #include <vector> // Cần thiết cho các trạng thái bàn cờ
 #include <memory> // Cần thiết cho std::unique_ptr
 #include "Board.h"
+#include "Game.h"
 #include "AI.h"
 
 // Định nghĩa các trạng thái của gamezzz
 enum class GameState {
     MainMenu,
+    DifficultySelect, // THÊM MỚI: Trạng thái chọn độ khó
     Playing,
     Settings,
     GameOver
 };
 
-enum class GameMode { PlayerVsPlayer, PlayerVsAI };
-// enum class Difficulty { Easy, Medium, Hard }; // Đã định nghĩa trong AI.h, có thể bỏ ở đây nếu chỉ dùng AI.h
-
 // Để hiển thị các mục menu
 struct MenuItem {
     std::string text;
     sf::Text sfText;
-    GameState targetState; // Trạng thái game khi chọn mục này
-    GameMode targetMode;   // Chế độ chơi khi chọn mục này
-    Difficulty targetDifficulty; // Độ khó khi chọn mục này
-    // Cờ để đánh dấu mục nào đang được chọn (cho menu settings)
+    sf::RectangleShape backgroundRect; // THÊM MỚI: Khung nền cho mục menu
+
+    GameState targetState;
+    GameMode targetMode;
+    Difficulty targetDifficulty;
     bool isSelected;
 
-    // Constructor mặc định cho MenuItem
-    MenuItem() : text(""), targetState(GameState::MainMenu), targetMode(GameMode::PlayerVsPlayer), targetDifficulty(Difficulty::Easy), isSelected(false) {}
+    MenuItem() : text(""), targetState(GameState::MainMenu), targetMode(GameMode::PlayerVsPlayer), targetDifficulty(Difficulty::Easy), isSelected(false) {
+        // Khởi tạo mặc định cho backgroundRect
+        backgroundRect.setFillColor(sf::Color(0, 0, 0, 150)); // Màu đen bán trong suốt
+        backgroundRect.setOutlineThickness(2);
+        backgroundRect.setOutlineColor(sf::Color::White);
+    }
 };
 
 
@@ -52,9 +56,9 @@ private:
     void handlePlayingEvents(const sf::Event& event);
     void handleSettingsEvents(const sf::Event& event);
 
-    void updateMainMenu();
+    //void updateMainMenu();
     void updatePlaying();
-    void updateSettings();
+    //void updateSettings();
 
     void renderMainMenu();
     void renderPlaying();
@@ -70,26 +74,25 @@ private:
     void redoMove();
     void passTurn();
     void handleEndGame();
+    void setupDifficultySelectMenu(); // Hàm thiết lập menu chọn độ khó
     std::pair<float, float> calculateFinalScores() const;
 
     void toggleSound(); // Hàm bật/tắt âm thanh
     void updateNotification(const std::string& message);
 
+    // Thêm các vector menu item cho menu chọn độ khó
+    std::vector<MenuItem> difficultySelectButtons;
+
     sf::RenderWindow window;
-    Board board;
+    Game game;
     std::unique_ptr<AI> ai;
 
     // Trạng thái game hiện tại
     GameState currentGameState;
 
-    GameMode currentMode;
-    Difficulty currentDifficulty;
-    Stone currentPlayer;
-    bool isGameOver;
-
     // Stacks for Undo/Redo
-    std::stack<std::vector<std::vector<Stone>>> moveHistory;
-    std::stack<std::vector<std::vector<Stone>>> redoHistory;
+    /*std::stack<std::vector<std::vector<Stone>>> moveHistory;
+    std::stack<std::vector<std::vector<Stone>>> redoHistory;*/
 
     // UI elements
     sf::Font font;
@@ -123,8 +126,6 @@ private:
     void drawMenu(sf::RenderWindow& window, const std::vector<MenuItem>& menuItems);
     void highlightMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& mousePos);
     void activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& mousePos);
-
-    int consecutivePasses;
 
 	// Textures and Sprites for board and stones
     sf::Texture blackStoneTexture, whiteStoneTexture;

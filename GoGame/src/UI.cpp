@@ -1,5 +1,6 @@
 ﻿#include "../include/UI.h"
 #include "../include/Board.h"
+
 #include <iostream>
 #include <fstream>
 #include <sstream>   
@@ -18,7 +19,7 @@ const float totalBoardPixelSize = BoardSize * CellSize;
 
 const sf::Color darkGreen(0, 100, 0);
 
-UI::UI() : window(sf::VideoMode(), "Go Game", sf::Style::Fullscreen), board(BoardSize), isGameOver(false), currentGameState(GameState::MainMenu), isSoundEnabled(true) {
+UI::UI() : window(sf::VideoMode(), "Go Game", sf::Style::Fullscreen), currentGameState(GameState::MainMenu), isSoundEnabled(true) {
     if (!font.loadFromFile("assets/fonts/arial.ttf")) {
         std::cerr << "Error loading font\n";
     }
@@ -115,6 +116,9 @@ UI::UI() : window(sf::VideoMode(), "Go Game", sf::Style::Fullscreen), board(Boar
 }
 
 void UI::draw(sf::RenderWindow& window) {
+    window.draw(mainmenuBackgroundSprite);
+
+    Board &board = game.board;
 	const int boardSize = board.getSize();
 
     // window.draw(boardSprite);
@@ -175,8 +179,16 @@ void UI::processEvents() {
         case GameState::MainMenu: handleMainMenuEvents(event); break;
         case GameState::Playing: handlePlayingEvents(event); break;
         case GameState::Settings: handleSettingsEvents(event); break;
+        case GameState::DifficultySelect: // Xử lý sự kiện cho menu chọn độ khó
+            if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+                activateMenuItem(difficultySelectButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y)));
+            }
+            else if (event.type == sf::Event::MouseMoved) {
+                highlightMenuItem(difficultySelectButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseMove.x, event.mouseMove.y)));
+            }
+            break;
 
-            // THÊM MỚI: Xử lý input cho màn hình GameOver
+        // THÊM MỚI: Xử lý input cho màn hình GameOver
         case GameState::GameOver:
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
                 currentGameState = GameState::MainMenu;
@@ -184,7 +196,7 @@ void UI::processEvents() {
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2i mousePos = { event.mouseButton.x, event.mouseButton.y };
                 if (playAgainButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
-                    startNewGame(currentMode, currentDifficulty); // Bắt đầu game mới với cài đặt cũ
+                    game.startNewGame(); // Bắt đầu game mới với cài đặt cũ
                     currentGameState = GameState::Playing; // Quay lại trạng thái chơi
                 }
                 if (mainMenuButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
@@ -201,6 +213,13 @@ void UI::update() {
     case GameState::Playing:
         updatePlaying();
         break;
+
+    case GameState::DifficultySelect: // Xử lý highlight cho menu chọn độ khó
+    {
+        sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+        highlightMenuItem(difficultySelectButtons, static_cast<sf::Vector2f>(mousePos));
+    }
+    break;
 
     // Highlight cho nút ở màn hình GameOver
     case GameState::GameOver:
@@ -223,13 +242,20 @@ void UI::render() {
     case GameState::MainMenu:
         renderMainMenu();
         break;
+
     case GameState::Playing:
         renderPlaying();
         break;
+
     case GameState::Settings:
         renderSettings();
         break;
-        // SỬA ĐỔI case GameState::GameOver
+
+    case GameState::DifficultySelect: // Vẽ menu chọn độ khó
+        window.draw(mainmenuBackgroundSprite);
+        drawMenu(window, difficultySelectButtons);
+        break;
+        
     case GameState::GameOver:
         renderPlaying(); // Vẽ bàn cờ cuối cùng ở nền
         window.draw(gameOverOverlay); // Vẽ lớp phủ mờ lên trên
@@ -270,7 +296,7 @@ void UI::handleMainMenuEvents(const sf::Event& event) {
 }
 
 void UI::handlePlayingEvents(const sf::Event& event) {
-    if (isGameOver) {
+    if (game.isGameOver) {
         return;
     }
 
@@ -282,7 +308,7 @@ void UI::handlePlayingEvents(const sf::Event& event) {
         if (event.key.code == sf::Keyboard::L) { loadGame(); } // loadGame đã có updateNotification
         if (event.key.code == sf::Keyboard::Z) { undoMove(); } // undoMove đã có updateNotification
         if (event.key.code == sf::Keyboard::Y) { redoMove(); } // redoMove đã có updateNotification
-        if (event.key.code == sf::Keyboard::R) { startNewGame(currentMode, currentDifficulty); } // startNewGame đã có
+        if (event.key.code == sf::Keyboard::R) { startNewGame(game.currentMode, game.currentDifficulty); } // startNewGame đã có
         if (event.key.code == sf::Keyboard::P) { passTurn(); } // startNewGame đã có
         if (event.key.code == sf::Keyboard::Escape) { // Trở về menu chính từ game
             currentGameState = GameState::MainMenu;
@@ -305,33 +331,24 @@ void UI::handleSettingsEvents(const sf::Event& event) {
 }
 
 void UI::updatePlaying() {
+    if (game.isGameOver) {
+        handleEndGame();
+    }
+
     // Cập nhật text hiển thị lượt đi (Đây là nơi nó nên được cập nhật liên tục)
-    turnIndicatorText.setString(std::string("Turn: ") + (currentPlayer == Stone::Black ? "Black" : "White"));
+    turnIndicatorText.setString(std::string("Turn: ") + (game.currentPlayer == Stone::Black ? "Black" : "White"));
 	window.draw(turnIndicatorText); // VẼ LẠI Ở ĐÂY ĐỂ ĐẢM BẢO NÓ LUÔN HIỂN THỊ
 
-    if (!isGameOver && currentMode == GameMode::PlayerVsAI && currentPlayer == Stone::White) { // Giả sử AI luôn là quân trắng
-		std::cerr << "AI is thinking...\n" << std::endl;
-        
-        Move aiMove = ai->findBestMove(board, Stone::White);
-        std::cerr << "foundBestMove...\n" << std::endl;
-        if (aiMove.row != -1 && board.placeStone(aiMove.row, aiMove.col, aiMove.player)) {
-
-            // Giả lập độ trễ cho AI
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-            // Nước đi của AI hợp lệ
-            moveHistory.push(board.getBoardState());
-            currentPlayer = Stone::Black;
-            while (!redoHistory.empty()) redoHistory.pop();
-            updateNotification("AI played.");
-            if (isSoundEnabled) placeSound.play(); // Play sound
-
-			consecutivePasses = 0; // Reset lượt pass liên tiếp khi có nước đi
+    if (!game.isGameOver && game.currentMode == GameMode::PlayerVsAI && game.currentPlayer == Stone::White) { // Giả sử AI luôn là quân trắng
+        if (game.AI_move()) {
+            updateNotification("AI has made its move.");
         }
         else {
-            updateNotification("AI passed.");
-			UI::passTurn(); // Nếu AI không thể di chuyển, coi như nó pass
-            std::cerr << "AI could not find a valid move or passed turn or game is over.\n";
+			updateNotification("AI passed the move.");
+            if (++game.consecutivePasses >= 2) {
+                game.isGameOver = true;
+				handleEndGame();
+			}
         }
     }
 }
@@ -350,7 +367,7 @@ void UI::renderPlaying() {
 }
 
 void UI::renderSettings() {
-    window.draw(menuBackground); // Vẽ nền menu
+    window.draw(mainmenuBackgroundSprite); // Vẽ nền menu
     // Có thể vẽ thêm tiêu đề "Settings"
     sf::Text settingsTitle("Settings", font, 50);
     settingsTitle.setFillColor(sf::Color::White);
@@ -364,115 +381,253 @@ void UI::renderSettings() {
 
 // === Các hàm hỗ trợ Menu ===
 void UI::setupMainMenu() {
-    const std::vector<std::tuple<std::string, GameState, GameMode, Difficulty>> buttonData = {
-        {"Play (Player vs Player)", GameState::Playing, GameMode::PlayerVsPlayer, Difficulty::Easy},
-        {"Play (AI Easy)", GameState::Playing, GameMode::PlayerVsAI, Difficulty::Easy},
-        {"Play (AI Medium)", GameState::Playing, GameMode::PlayerVsAI, Difficulty::Medium},
-        {"Play (AI Hard)", GameState::Playing, GameMode::PlayerVsAI, Difficulty::Hard},
-        {"Settings", GameState::Settings, GameMode::PlayerVsPlayer, Difficulty::Easy},
-        {"Exit", GameState::GameOver, GameMode::PlayerVsPlayer, Difficulty::Easy}
+    // Cấu trúc menu mới
+    // Item: Text, TargetState, TargetMode (nếu có), Difficulty (nếu có)
+    // Lưu ý: TargetMode và Difficulty chỉ quan trọng khi TargetState là Playing hoặc DifficultySelect
+
+    // Load Game sẽ cần logic riêng, tạm thời đặt TargetState là Playing (sẽ xử lý trong activateMenuItem)
+
+    const std::vector<std::tuple<std::string, GameState, GameMode>> buttonData = {
+        {"Load Game", GameState::Playing, GameMode::PlayerVsPlayer}, // Mode không quan trọng vì sẽ load từ file
+        {"Player vs Player", GameState::Playing, GameMode::PlayerVsPlayer},
+        {"Player vs Computer", GameState::DifficultySelect, GameMode::PlayerVsAI}, // Chuyển sang chọn độ khó
+        {"Settings", GameState::Settings, GameMode::PlayerVsPlayer},
+        {"Exit", GameState::GameOver, GameMode::PlayerVsPlayer}
     };
 
-	float CharSize = 40.f;
+    float CharSize = 30.f;
     float SpaceSize = 75.f;
-    float totalHeight = buttonData.size() * (CharSize / 2 + SpaceSize / 2); // Tổng chiều cao của tất cả các nút
+    float ButtonWidth = 400.f;
+    float ButtonHeight = 50.f;
 
-    float startY = window.getSize().y / 2.0f - totalHeight / 2.0f;
+    float totalHeight = buttonData.size() * SpaceSize;
+    float startY = window.getSize().y / 2.0f - totalHeight / 2.0f + 50.f;
+
     mainMenuButtons.clear();
 
-    for (const auto& data : buttonData) {
+    for (size_t i = 0; i < buttonData.size(); ++i) {
+        const auto& data = buttonData[i];
         MenuItem item;
         item.text = std::get<0>(data);
         item.targetState = std::get<1>(data);
         item.targetMode = std::get<2>(data);
-        item.targetDifficulty = std::get<3>(data);
+        // Difficulty mặc định là Easy, sẽ không dùng ở đây
+
+        // ... (Thiết lập Text và Background Rect như cũ) ...
         item.sfText.setFont(font);
-        item.sfText.setCharacterSize(CharSize);
+        item.sfText.setCharacterSize(static_cast<unsigned int>(CharSize));
         item.sfText.setFillColor(sf::Color::White);
         item.sfText.setString(item.text);
+
         sf::FloatRect textRect = item.sfText.getLocalBounds();
         item.sfText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+
+        item.backgroundRect.setSize(sf::Vector2f(ButtonWidth, ButtonHeight));
+        item.backgroundRect.setOrigin(ButtonWidth / 2.0f, ButtonHeight / 2.0f);
+        item.backgroundRect.setPosition(window.getSize().x / 2.0f, startY + i * SpaceSize);
+        item.backgroundRect.setFillColor(sf::Color(0, 0, 0, 180));
+        item.backgroundRect.setOutlineColor(sf::Color::White);
+        item.backgroundRect.setOutlineThickness(2.0f);
+
+        item.sfText.setPosition(item.backgroundRect.getPosition());
+
         mainMenuButtons.push_back(item);
-    }
-
-
-    for (size_t i = 0; i < mainMenuButtons.size(); ++i) {
-        mainMenuButtons[i].sfText.setPosition(window.getSize().x / 2.0f, startY + i * SpaceSize);
     }
 }
 
+// === THÊM MỚI setupDifficultySelectMenu ===
+void UI::setupDifficultySelectMenu() {
+    const std::vector<std::tuple<std::string, Difficulty>> difficultyData = {
+        {"Easy Mode", Difficulty::Easy},
+        {"Medium Mode", Difficulty::Medium},
+        {"Hard Mode", Difficulty::Hard},
+        {"Back", Difficulty::Easy} // Difficulty không quan trọng cho nút Back
+    };
+
+    float CharSize = 30.f;
+    float SpaceSize = 75.f;
+    float ButtonWidth = 400.f;
+    float ButtonHeight = 50.f;
+
+    float totalHeight = difficultyData.size() * SpaceSize;
+    float startY = window.getSize().y / 2.0f - totalHeight / 2.0f + 50.f;
+
+    difficultySelectButtons.clear();
+
+    for (size_t i = 0; i < difficultyData.size(); ++i) {
+        const auto& data = difficultyData[i];
+        MenuItem item;
+        item.text = std::get<0>(data);
+        item.targetDifficulty = std::get<1>(data);
+
+        if (item.text == "Back") {
+            item.targetState = GameState::MainMenu;
+        }
+        else {
+            item.targetState = GameState::Playing;
+            item.targetMode = GameMode::PlayerVsAI;
+        }
+
+        // ... (Thiết lập Text và Background Rect tương tự setupMainMenu) ...
+        item.sfText.setFont(font);
+        item.sfText.setCharacterSize(static_cast<unsigned int>(CharSize));
+        item.sfText.setFillColor(sf::Color::White);
+        item.sfText.setString(item.text);
+
+        sf::FloatRect textRect = item.sfText.getLocalBounds();
+        item.sfText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+
+        item.backgroundRect.setSize(sf::Vector2f(ButtonWidth, ButtonHeight));
+        item.backgroundRect.setOrigin(ButtonWidth / 2.0f, ButtonHeight / 2.0f);
+        item.backgroundRect.setPosition(window.getSize().x / 2.0f, startY + i * SpaceSize);
+        item.backgroundRect.setFillColor(sf::Color(0, 0, 0, 180));
+        item.backgroundRect.setOutlineColor(sf::Color::White);
+        item.backgroundRect.setOutlineThickness(2.0f);
+
+        item.sfText.setPosition(item.backgroundRect.getPosition());
+
+        difficultySelectButtons.push_back(item);
+    }
+}
+
+// === SỬA ĐỔI setupSettingsMenu ===
 void UI::setupSettingsMenu() {
-    float startY = window.getSize().y / 2.0f + 50.0f;
-    float spacing = 60.0f;
+    float startY = window.getSize().y / 2.0f - 50.0f; // Điều chỉnh vị trí bắt đầu
+    float spacing = 80.0f;
+    float ButtonWidth = 350.f;
+    float ButtonHeight = 50.f;
 
     settingsButtons.clear();
 
+    // Helper lambda để tạo nút settings
+    auto createButton = [&](const std::string& text, int index) -> MenuItem {
+        MenuItem item;
+        item.text = text;
+        item.sfText.setFont(font);
+        item.sfText.setCharacterSize(30);
+        item.sfText.setFillColor(sf::Color::White);
+        item.sfText.setString(text);
+
+        sf::FloatRect textRect = item.sfText.getLocalBounds();
+        item.sfText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+
+        item.backgroundRect.setSize(sf::Vector2f(ButtonWidth, ButtonHeight));
+        item.backgroundRect.setOrigin(ButtonWidth / 2.0f, ButtonHeight / 2.0f);
+        item.backgroundRect.setPosition(window.getSize().x / 2.0f, startY + index * spacing);
+        item.backgroundRect.setFillColor(sf::Color(0, 0, 0, 180));
+        item.backgroundRect.setOutlineColor(sf::Color::White);
+        item.backgroundRect.setOutlineThickness(2.0f);
+
+        item.sfText.setPosition(item.backgroundRect.getPosition());
+        return item;
+        };
+
     // Sound Toggle
-    MenuItem soundItem;
-    soundItem.text = "Sound: " + (isSoundEnabled ? std::string("ON") : std::string("OFF"));
-    soundItem.sfText.setFont(font);
-    soundItem.sfText.setCharacterSize(25);
-    soundItem.sfText.setFillColor(sf::Color::White);
+    MenuItem soundItem = createButton("Sound: " + std::string(isSoundEnabled ? "ON" : "OFF"), 0);
     settingsButtons.push_back(soundItem);
 
     // Back to Main Menu
-    MenuItem backItem;
-    backItem.text = "Back to Main Menu";
+    MenuItem backItem = createButton("Back to Main Menu", 1);
     backItem.targetState = GameState::MainMenu;
-    backItem.sfText.setFont(font);
-    backItem.sfText.setCharacterSize(25);
-    backItem.sfText.setFillColor(sf::Color::White);
     settingsButtons.push_back(backItem);
-
-    // Căn giữa và đặt vị trí cho các nút
-    for (size_t i = 0; i < settingsButtons.size(); ++i) {
-        settingsButtons[i].sfText.setString(settingsButtons[i].text);
-        sf::FloatRect textRect = settingsButtons[i].sfText.getLocalBounds();
-        settingsButtons[i].sfText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
-        settingsButtons[i].sfText.setPosition(window.getSize().x / 2.0f, startY + i * spacing);
-    }
 }
 
+// === SỬA ĐỔI drawMenu ===
 void UI::drawMenu(sf::RenderWindow& window, const std::vector<MenuItem>& menuItems) {
     for (const auto& item : menuItems) {
-        window.draw(item.sfText);
+        window.draw(item.backgroundRect); // Vẽ khung trước
+        window.draw(item.sfText);         // Vẽ chữ sau
     }
 }
 
+// === SỬA ĐỔI highlightMenuItem ===
 void UI::highlightMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& mousePos) {
     for (auto& item : menuItems) {
-        if (item.sfText.getGlobalBounds().contains(mousePos)) {
+        // Kiểm tra va chạm với backgroundRect thay vì sfText để vùng chọn lớn hơn
+        if (item.backgroundRect.getGlobalBounds().contains(mousePos)) {
             item.sfText.setFillColor(sf::Color::Yellow);
+            item.backgroundRect.setOutlineColor(sf::Color::Yellow); // Highlight viền
+            item.backgroundRect.setFillColor(sf::Color(50, 50, 50, 200)); // Làm sáng nền một chút
         }
         else {
             item.sfText.setFillColor(sf::Color::White);
+            item.backgroundRect.setOutlineColor(sf::Color::White);
+            item.backgroundRect.setFillColor(sf::Color(0, 0, 0, 180)); // Màu gốc
         }
     }
 }
 
+// === SỬA ĐỔI activateMenuItem ===
 void UI::activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& mousePos) {
     for (size_t i = 0; i < menuItems.size(); ++i) {
-        if (menuItems[i].sfText.getGlobalBounds().contains(mousePos)) {
-            if (menuItems[i].text.rfind("Sound:", 0) == 0) {
-                toggleSound();
-                // setupSettingsMenu() sẽ cập nhật lại text và vị trí của nút Sound
-            }
-            else if (menuItems[i].text == "Exit") {
+        // Kiểm tra xem chuột có click vào khung hình chữ nhật của nút không
+        if (menuItems[i].backgroundRect.getGlobalBounds().contains(mousePos)) {
+
+            // --- XỬ LÝ CHUNG CHO NÚT EXIT ---
+            if (menuItems[i].text == "Exit") {
                 window.close();
+                return;
             }
-            else {
-                currentGameState = menuItems[i].targetState;
-                if (currentGameState == GameState::Playing) {
-                    startNewGame(menuItems[i].targetMode, menuItems[i].targetDifficulty);
+
+            // --- XỬ LÝ LOGIC TẠI MAIN MENU ---
+            if (currentGameState == GameState::MainMenu) {
+                if (menuItems[i].text == "Load Game") {
+                    loadGame(); // Hàm này sẽ tự chuyển state sang Playing nếu load thành công
+                }
+                else if (menuItems[i].text == "Player vs Player") {
+                    startNewGame(GameMode::PlayerVsPlayer, Difficulty::Easy);
+                    currentGameState = GameState::Playing;
+                }
+                else if (menuItems[i].text == "Player vs Computer") {
+                    setupDifficultySelectMenu(); // Tạo menu con chọn độ khó
+                    currentGameState = GameState::DifficultySelect;
+                }
+                else if (menuItems[i].text == "Settings") {
+                    setupSettingsMenu();
+                    currentGameState = GameState::Settings;
                 }
             }
-            break;
+            // --- XỬ LÝ LOGIC TẠI MENU CHỌN ĐỘ KHÓ (DIFFICULTY SELECT) ---
+            else if (currentGameState == GameState::DifficultySelect) {
+                if (menuItems[i].text == "Back") {
+                    setupMainMenu(); // Quay lại menu chính
+                    currentGameState = GameState::MainMenu;
+                }
+                else {
+                    // Các nút Easy/Medium/Hard đã được gán targetDifficulty trong setupDifficultySelectMenu
+                    startNewGame(GameMode::PlayerVsAI, menuItems[i].targetDifficulty);
+                    currentGameState = GameState::Playing;
+                }
+            }
+            // --- XỬ LÝ LOGIC TẠI MENU SETTINGS ---
+            else if (currentGameState == GameState::Settings) {
+                // Kiểm tra nút Sound (bắt đầu bằng chuỗi "Sound:")
+                if (menuItems[i].text.rfind("Sound:", 0) == 0) {
+                    toggleSound();
+
+                    // Cập nhật văn bản trên nút ngay lập tức
+                    menuItems[i].text = "Sound: " + std::string(isSoundEnabled ? "ON" : "OFF");
+                    menuItems[i].sfText.setString(menuItems[i].text);
+
+                    // Căn giữa lại văn bản vì độ dài chuỗi có thể thay đổi
+                    sf::FloatRect textRect = menuItems[i].sfText.getLocalBounds();
+                    menuItems[i].sfText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+                    menuItems[i].sfText.setPosition(menuItems[i].backgroundRect.getPosition());
+                }
+                // Kiểm tra nút Back (dựa trên targetState đã gán)
+                else if (menuItems[i].targetState == GameState::MainMenu) {
+                    setupMainMenu();
+                    currentGameState = GameState::MainMenu;
+                }
+            }
+
+            break; // Đã xử lý xong sự kiện click cho nút này, thoát vòng lặp
         }
     }
 }
 
 void UI::handlePlayerInput(const sf::Vector2i& mousePos) {
-    if (isGameOver || (currentMode == GameMode::PlayerVsAI && currentPlayer == Stone::White)) return;
+    if (game.isGameOver || (game.currentMode == GameMode::PlayerVsAI && game.currentPlayer == Stone::White)) return;
 
     float spacing = CellSize;
     float offset = 50;
@@ -480,18 +635,14 @@ void UI::handlePlayerInput(const sf::Vector2i& mousePos) {
     int col = static_cast<int>((mousePos.x - offset - LeftborderSize + spacing / 2) / spacing);
     int row = static_cast<int>((mousePos.y - offset - LeftborderSize + spacing / 2) / spacing);
 
-    if (!board.isWithinBounds(row, col)) {
+    if (!game.board.isWithinBounds(row, col)) {
         updateNotification("Invalid position click.");
         return;
     }
 
-    if (board.placeStone(row, col, currentPlayer)) {
-        moveHistory.push(board.getBoardState());
-        currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
-        while (!redoHistory.empty()) redoHistory.pop();
+    if (game.placeStone(row, col, game.currentPlayer)) {
         updateNotification("");
         if (isSoundEnabled) placeSound.play();
-		consecutivePasses = 0; // Reset pass count on valid move
     }
     else {
         updateNotification("Invalid move: spot taken or suicide move.");
@@ -499,39 +650,12 @@ void UI::handlePlayerInput(const sf::Vector2i& mousePos) {
 }
 
 void UI::startNewGame(GameMode mode, Difficulty diff) {
-    currentMode = mode;
-    currentDifficulty = diff;
-    consecutivePasses = 0;
-    
-    if (mode == GameMode::PlayerVsAI) {
-        ai = std::make_unique<AI>(diff);
-    }
-    else {
-        ai.reset();
-    }
-    board.reset();
-    currentPlayer = Stone::Black;
-    isGameOver = false;
-    while (!moveHistory.empty()) moveHistory.pop();
-    while (!redoHistory.empty()) redoHistory.pop();
+    game.startNewGame(mode, diff);
     updateNotification("New Game Started!");
 }
 
 void UI::saveGame() {
-    std::ofstream saveFile("savegame.txt");
-    if (saveFile.is_open()) {
-        saveFile << static_cast<int>(currentMode) << "\n";
-        saveFile << static_cast<int>(currentDifficulty) << "\n";
-        saveFile << static_cast<int>(currentPlayer) << "\n";
-        saveFile << static_cast<int>(isSoundEnabled) << "\n";
-        const auto& state = board.getBoardState();
-        for (int r = 0; r < board.getSize(); ++r) {
-            for (int c = 0; c < board.getSize(); ++c) {
-                saveFile << static_cast<int>(state[r][c]) << " ";
-            }
-            saveFile << "\n";
-        }
-        saveFile.close();
+    if (game.saveGame()) {
         updateNotification("Game saved!");
     }
     else {
@@ -540,32 +664,9 @@ void UI::saveGame() {
 }
 
 void UI::loadGame() {
-    std::ifstream loadFile("savegame.txt");
-    if (loadFile.is_open()) {
-        int modeInt, diffInt, playerInt, soundInt;
-        loadFile >> modeInt >> diffInt >> playerInt >> soundInt;
-
-        isSoundEnabled = static_cast<bool>(soundInt);
-        setupSettingsMenu(); // Gọi lại để cập nhật text và vị trí của nút Sound
-
-        currentMode = static_cast<GameMode>(modeInt);
-        currentDifficulty = static_cast<Difficulty>(diffInt);
-        startNewGame(currentMode, currentDifficulty); // Hàm này cũng gọi updateNotification
-
-        currentPlayer = static_cast<Stone>(playerInt);
-
-        std::vector<std::vector<Stone>> loadedState(board.getSize(), std::vector<Stone>(board.getSize()));
-        for (int r = 0; r < board.getSize(); ++r) {
-            for (int c = 0; c < board.getSize(); ++c) {
-                int stoneVal;
-                loadFile >> stoneVal;
-                loadedState[r][c] = static_cast<Stone>(stoneVal);
-            }
-        }
-        board.setBoardState(loadedState);
-        loadFile.close();
-        updateNotification("Game loaded!");
+    if (game.loadGame()) {
         currentGameState = GameState::Playing;
+        updateNotification("Game loaded!");
     }
     else {
         updateNotification("Failed to load game!");
@@ -573,12 +674,17 @@ void UI::loadGame() {
 }
 
 void UI::undoMove() {
-    if (!moveHistory.empty()) {
-        redoHistory.push(board.getBoardState());
-        board.setBoardState(moveHistory.top());
-        moveHistory.pop();
-        currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
+    if (game.undoMove()) {
         updateNotification("Undo successful.");
+
+        std::cerr << "Undo" << std::endl;
+        const auto& state = game.board.getBoardState();
+        for (int r = 0; r < game.board.getSize(); ++r) {
+            for (int c = 0; c < game.board.getSize(); ++c) {
+                std::cerr << static_cast<int>(state[r][c]) << " ";
+            }
+            std::cerr << "\n";
+        }
     }
     else {
         updateNotification("Cannot undo further.");
@@ -586,20 +692,19 @@ void UI::undoMove() {
 }
 
 void UI::redoMove() {
-    if (!redoHistory.empty()) {
-        moveHistory.push(board.getBoardState());
-        board.setBoardState(redoHistory.top());
-        redoHistory.pop();
-        currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
+    if (game.redoMove()) {
+        updateNotification("Redo successful.");
+    }
+    else {
+        updateNotification("Cannot redo further.");
     }
 }
 
 void UI::handleEndGame() {
 	std::cerr << "Game Over triggered.\n";
-    isGameOver = true;
     currentGameState = GameState::GameOver;
 
-    std::pair<float, float> finalScores = calculateFinalScores();
+    std::pair<float, float> finalScores = game.calculateFinalScores();
     float blackScore = finalScores.first;
     float whiteScore = finalScores.second;
 
@@ -648,45 +753,13 @@ void UI::handleEndGame() {
 }
 
 void UI::passTurn() {
-    if (isGameOver) {
-        return; // Không cho phép bỏ lượt khi game đã kết thúc
-    }
-
-    // Đổi lượt người chơi
-    currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
-    consecutivePasses++; // Tăng biến đếm
-	std::cerr << "accessed passTurn()\n";
-
-    std::cout << "Turn passed. Consecutive passes: " << consecutivePasses << std::endl;
-
-    // Lưu lại trạng thái để có thể undo
-    moveHistory.push(board.getBoardState());
-    while (!redoHistory.empty()) redoHistory.pop();
-
-    // Nếu cả hai người chơi đều bỏ lượt, kết thúc game
-    if (consecutivePasses == 2) {
-        isGameOver = true;
-        updateNotification("Game Over: Both players passed.");
+    game.passTurn();
+    if (game.isGameOver) {
         handleEndGame();
     }
-}
-
-std::pair<float, float> UI::calculateFinalScores() const {
-    // 1. Lấy điểm lãnh thổ từ đối tượng Board
-    const float Komi = 6.5;
-    std::pair<int, int> territoryScores = board.calculateScores();
-    int blackTerritory = territoryScores.first;
-    int whiteTerritory = territoryScores.second;
-
-    // 2. Tính điểm cuối cùng
-    // Điểm của Đen = (Lãnh thổ của Đen) + (Số quân Trắng bắt được)
-    float finalBlackScore = static_cast<float>(blackTerritory + board.blackCapture);
-
-    // Điểm của Trắng = (Lãnh thổ của Trắng) + (Số quân Đen bắt được) + Komi
-    float finalWhiteScore = static_cast<float>(whiteTerritory + board.whiteCapture) + Komi;
-
-    return { finalBlackScore, finalWhiteScore };
-
+    else {
+        updateNotification("Player passed turn.");
+    }
 }
 
 void UI::toggleSound() {
