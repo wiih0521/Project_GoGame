@@ -1,60 +1,60 @@
 ﻿# ⚪ Go Game Project ⚫
 
-> **Đồ án môn "Introduction to Programming"**
+> **Course Project: "Introduction to Programming"**
 >
-> Một tựa game Cờ Vây được viết bằng C++ và thư viện SFML, tích hợp AI thông minh.
+> A Go board game developed using C++ and the SFML library, featuring intelligent AI integration.
 
-## 🚀 Tính năng
+## 🚀 Features
 
-- **Chế độ chơi đa dạng:**
-  - 👤 **PvP:** Hai người chơi đấu với nhau trên cùng một máy.
-  - 🤖 **PvE:** Người đấu với Máy (Sử dụng Engine AI Pachi mạnh mẽ).
-- **Hệ thống AI:** Hỗ trợ các cấp độ từ Dễ đến Khó.
-- **Tiện ích:**
-  - 💾 **Save/Load:** Lưu và tải lại ván cờ đang đánh dở.
-  - ↩️ **Undo/Redo:** Hoàn tác hoặc làm lại nước đi nếu đánh nhầm.
-- **Giao diện:** Đồ họa SFML đơn giản, trực quan, có âm thanh.
+- **Versatile Game Modes:**
+  - 👤 **PvP:** Player vs. Player on the same machine.
+  - 🤖 **PvE:** Player vs. Environment (Powered by the robust Pachi AI Engine).
+- **AI System:** Supports multiple difficulty levels from Easy to Hard.
+- **Utilities:**
+  - 💾 **Save/Load:** Save progress and reload unfinished games.
+  - ↩️ **Undo/Redo:** Correct mistakes or replay moves.
+- **Interface:** Simple, intuitive SFML graphics with sound effects.
 
-## 🎮 Hướng dẫn điều khiển
+## 🎮 Controls
 
-Game sử dụng chuột và bàn phím để thao tác:
+The game uses both mouse and keyboard for interaction:
 
-| Phím / Thao tác | Chức năng |
+| Key / Action | Function |
 | :--- | :--- |
-| **Chuột trái** | Đặt quân cờ |
-| **Phím S** | Lưu game (Save) |
-| **Phím L** | Tải game (Load) |
-| **Phím Z** | Hoàn tác nước đi (Undo) |
-| **Phím Y** | Làm lại nước đi (Redo) |
-| **Phím R** | Chơi lại ván mới (Restart) |
+| **Left Click** | Place Stone |
+| **S Key** | Save Game |
+| **L Key** | Load Game |
+| **Z Key** | Undo Move |
+| **Y Key** | Redo Move |
+| **R Key** | Restart Game |
 
-## 📦 Hướng dẫn Cài đặt & Chơi 
+## 📦 Installation & How to Play
 
-1. Truy cập mục **[Releases](../../releases)** của repository này.
-2. Tải file nén `GoGame_v1.0.zip` mới nhất.
-3. Giải nén ra thư mục.
-4. Chạy file `GoGame.exe` để chơi ngay.
-   > *Lưu ý: Không tách rời file `.exe` khỏi thư mục chứa `assets`, `pachi.exe` và các file `.dll`.*
+1. Go to the **[Releases](../../releases)** section of this repository.
+2. Download the latest `GoGame_v1.0.zip` file.
+3. Extract the downloaded file to a folder.
+4. Run `GoGame.exe` to start playing.
+   > *Note: Do not separate the `.exe` file from the folder containing `assets`, `pachi.exe`, and `.dll` files.*
 
-## 🛠️ Hướng dẫn Biên dịch (Dành cho Dev)
+## 🛠️ Build Instructions (For Developers)
 
-Dự án được phát triển trên **Visual Studio 2022** (x64).
+This project was developed using **Visual Studio 2022** (x64).
 
-### Yêu cầu:
+### Requirements:
 - Visual Studio 2022 (Workload: Desktop development with C++).
-- Thư viện **SFML 2.6.x** (64-bit).
-- Engine **Pachi** (đã bao gồm trong source).
+- **SFML 2.6.x** Library (64-bit).
+- **Pachi** Engine (included in the source code).
 
-## 👨‍💻 Thông tin tác giả
+## 👨‍💻 Authors
 
-- **Họ và tên:** Đỗ Gia Huy
-- **MSSV:** 25125013
-- **Lớp:** 25A02
-- **Trường:** Trường Đại học Khoa học Tự Nhiên
+- **Name:** Đỗ Gia Huy
+- **Student ID:** 25125013
+- **Class:** 25A02
+- **University:** VNU-HCM University of Science
 
-- **Họ và tên:** Võ Thanh Hải
-- **MSSV:** 25125011
-- **Lớp:** 25A02
-- **Trường:** Trường Đại học Khoa học Tự Nhiên
+- **Name:** Võ Thanh Hải
+- **Student ID:** 25125011
+- **Class:** 25A02
+- **University:** VNU-HCM University of Science
 
-*Đồ án môn Introduction to Programming - Học kỳ 1 Năm học [2025-2026]*
+*Introduction to Programming - Semester 1, Academic Year [2025-2026]*
