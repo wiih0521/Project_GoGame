@@ -19,24 +19,36 @@ const float totalBoardPixelSize = BoardSize * CellSize;
 
 const sf::Color darkGreen(0, 100, 0);
 
-UI::UI() : window(sf::VideoMode(), "Go Game", sf::Style::Fullscreen), currentGameState(GameState::MainMenu), isSoundEnabled(true) {
+UI::UI() : window(sf::VideoMode(1920, 1080), "Go Game", sf::Style::Default), currentGameState(GameState::MainMenu), isSoundEnabled(true) {
+    // 1. Tạo cửa sổ với kích thước bất kỳ (ví dụ 800x600), dùng Style::Default
+    // window.create(sf::VideoMode(1200, 800), "Go Game", sf::Style::Default);
+
+    // 2. Gọi lệnh của Windows để phóng to (Maximize) cửa sổ
+    ShowWindow(window.getSystemHandle(), SW_MAXIMIZE);
+
     if (!font.loadFromFile("assets/fonts/arial.ttf")) {
         std::cerr << "Error loading font\n";
     }
 
     // Tải âm thanh
-    if (!placeSoundBuffer.loadFromFile("assets/sounds/place_stone.wav")) std::cerr << "Error loading place sound\n";
-    if (!captureSoundBuffer.loadFromFile("assets/sounds/capture.wav")) std::cerr << "Error loading capture sound\n";
+    if (!placeSoundBuffer.loadFromFile("assets/sounds/clicksound.mp3")) std::cerr << "Error loading place sound\n";
+    // if (!captureSoundBuffer.loadFromFile("assets/sounds/capture.wav")) std::cerr << "Error loading capture sound\n";
+    if (!backgroundSound.openFromFile("assets/sounds/background.ogg")) std::cerr << "Error loading background sound\n";
     if (!mainmenuBackgroundTexture.loadFromFile("assets/images/mainmenu_background.png")) std::cerr << "Error loading main menu background image\n";
+
+    if (isSoundEnabled) {
+        playMusic();
+    }
 
     placeSound.setBuffer(placeSoundBuffer);
     captureSound.setBuffer(captureSoundBuffer);
+    // backgroundSound.setBuffer(backgroundSoundBuffer);
 
     // Cài đặt ban đầu cho các text UI
     turnIndicatorText.setFont(font);
     turnIndicatorText.setCharacterSize(24);
     turnIndicatorText.setFillColor(sf::Color::Black);
-    turnIndicatorText.setPosition(CellSize, window.getSize().y - 30);
+    turnIndicatorText.setPosition(CellSize, window.getSize().y - 50);
 
     // Main menu
 	mainmenuBackgroundSprite.setTexture(mainmenuBackgroundTexture);
@@ -96,6 +108,7 @@ UI::UI() : window(sf::VideoMode(), "Go Game", sf::Style::Fullscreen), currentGam
     if (!RightboardTexture.loadFromFile("assets/images/r.png")) std::cerr << "Error loading board texture\n";
     if (!CenterboardTexture.loadFromFile("assets/images/c.png")) std::cerr << "Error loading board texture\n";
     if (!BackGroundTexture.loadFromFile("assets/images/background.png")) std::cerr << "Error loading board texture\n";
+    if (!SpotTexture.loadFromFile("assets/images/spot.png")) std::cerr << "Error loading board texture\n";
 
     if (!blackStoneTexture.loadFromFile("assets/images/black_stone.png")) std::cerr << "Error loading black stone texture\n";
     if (!whiteStoneTexture.loadFromFile("assets/images/white_stone.png")) std::cerr << "Error loading white stone texture\n";
@@ -109,6 +122,7 @@ UI::UI() : window(sf::VideoMode(), "Go Game", sf::Style::Fullscreen), currentGam
     LeftboardSprite.setTexture(LeftboardTexture);
     RightboardSprite.setTexture(RightboardTexture);
     CenterboardSprite.setTexture(CenterboardTexture);
+    SpotSprite.setTexture(SpotTexture);
     BackGroundSprite.setTexture(BackGroundTexture);
 
     blackStoneSprite.setTexture(blackStoneTexture);
@@ -139,6 +153,11 @@ void UI::draw(sf::RenderWindow& window) {
             else if (r == boardSize - 1) partSprite = &BottomboardSprite;
             else if (c == 0) partSprite = &LeftboardSprite;
             else if (c == boardSize - 1) partSprite = &RightboardSprite;
+            else if ((boardSize == 19 && ((r == 3 || r == 9 || r == 15) && (c == 3 || c == 9 || c == 15))) ||
+                     (boardSize == 13 && ((r == 3 || r == 6 || r == 9) && (c == 3 || c == 6 || c == 9))) ||
+                     (boardSize == 9 && ((r == 2 || r == 4 || r == 6) && (c == 2 || c == 4 || c == 6)))) {
+                partSprite = &SpotSprite;
+			}
             else partSprite = &CenterboardSprite;
             if (partSprite) {
                 partSprite->setPosition(c * spacing + offset - (*partSprite).getGlobalBounds().width / 2 + LeftborderSize,
@@ -165,7 +184,7 @@ void UI::run() {
         processEvents();
         render();
         update();
-        render();
+        // render();
     }
 }
 
@@ -277,7 +296,7 @@ void UI::updateNotification(const std::string& message) {
     notificationText.setStyle(sf::Text::Bold);
     notificationText.setCharacterSize(20);
     notificationText.setFillColor(sf::Color::Red);
-    notificationText.setPosition(window.getSize().x / 2.0f, window.getSize().y - 50);
+    notificationText.setPosition(window.getSize().x / 2.0f, window.getSize().y - 30);
 
     notificationText.setString(message);
     sf::FloatRect textRect = notificationText.getLocalBounds();
@@ -335,9 +354,10 @@ void UI::updatePlaying() {
         handleEndGame();
     }
 
-    // Cập nhật text hiển thị lượt đi (Đây là nơi nó nên được cập nhật liên tục)
     turnIndicatorText.setString(std::string("Turn: ") + (game.currentPlayer == Stone::Black ? "Black" : "White"));
-	window.draw(turnIndicatorText); // VẼ LẠI Ở ĐÂY ĐỂ ĐẢM BẢO NÓ LUÔN HIỂN THỊ
+    if (game.currentMode == GameMode::PlayerVsAI) {
+        turnIndicatorText.setString("");
+	}
 
     if (!game.isGameOver && game.currentMode == GameMode::PlayerVsAI && game.currentPlayer == Stone::White) { // Giả sử AI luôn là quân trắng
         if (game.AI_move()) {
@@ -764,6 +784,22 @@ void UI::passTurn() {
 
 void UI::toggleSound() {
     isSoundEnabled = !isSoundEnabled;
+    if (isSoundEnabled) {
+        playMusic();
+    }
+    else {
+        stopMusic();
+	}
+
     updateNotification("Sound " + (isSoundEnabled ? std::string("ON") : std::string("OFF")));
     setupSettingsMenu(); // Gọi lại để cập nhật text và vị trí của nút Sound
+}
+
+void UI::playMusic() {
+    backgroundSound.setLoop(true); // Lặp lại liên tục
+    backgroundSound.play();
+}
+
+void UI::stopMusic() {
+    backgroundSound.stop();
 }

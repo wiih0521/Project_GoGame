@@ -22,6 +22,7 @@ public:
     void handlePlayerInput(const sf::Vector2i& mousePos);
     void startNewGame(GameMode mode, Difficulty diff = Difficulty::Easy);
     void startNewGame();
+    void NewGame();
     bool isWithinBounds(int row, int col) const;
     bool saveGame();
     bool loadGame();

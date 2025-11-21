@@ -12,38 +12,43 @@ Game::Game() : board(19), isGameOver(false), currentMode(GameMode::PlayerVsPlaye
     ai = nullptr;
 }
 
+void Game::NewGame() {
+    board.reset();
+    currentPlayer = Stone::Black;
+    isGameOver = false;
+    consecutivePasses = 0;
+
+    if (currentMode == GameMode::PlayerVsAI && currentDifficulty == Difficulty::Hard) {
+        AIHard::startNewGame();
+    }
+
+    while (!moveHistory.empty()) moveHistory.pop();
+    while (!redoHistory.empty()) redoHistory.pop();
+}
+
 void Game::startNewGame(GameMode mode, Difficulty diff) {
     currentMode = mode;
     currentDifficulty = diff;
-    consecutivePasses = 0;
-
+    
     if (mode == GameMode::PlayerVsAI) {
         ai = std::make_unique<AI>(diff);
     }
     else {
         ai.reset();
     }
-    board.reset();
-    currentPlayer = Stone::Black;
-    isGameOver = false;
-    while (!moveHistory.empty()) moveHistory.pop();
-    while (!redoHistory.empty()) redoHistory.pop();
+    
+    NewGame();
 }
 
 void Game::startNewGame() {
-    consecutivePasses = 0;
-
     if (currentMode == GameMode::PlayerVsAI) {
         ai = std::make_unique<AI>(currentDifficulty);
     }
     else {
         ai.reset();
     }
-    board.reset();
-    currentPlayer = Stone::Black;
-    isGameOver = false;
-    while (!moveHistory.empty()) moveHistory.pop();
-    while (!redoHistory.empty()) redoHistory.pop();
+    
+    NewGame();
 }
 
 bool Game::saveGame() {
@@ -52,6 +57,10 @@ bool Game::saveGame() {
         saveFile << static_cast<int>(currentMode) << "\n";
         saveFile << static_cast<int>(currentDifficulty) << "\n";
         saveFile << static_cast<int>(currentPlayer) << "\n";
+
+        saveFile << board.blackCapture << "\n";
+        saveFile << board.whiteCapture << "\n";
+
         const auto& state = board.getBoardState();
         for (int r = 0; r < board.getSize(); ++r) {
             for (int c = 0; c < board.getSize(); ++c) {
@@ -76,6 +85,12 @@ bool Game::loadGame() {
         currentMode = static_cast<GameMode>(modeInt);
         currentDifficulty = static_cast<Difficulty>(diffInt);
         startNewGame(currentMode, currentDifficulty); 
+
+        float blackCapture, whiteCaptrue;
+        loadFile >> blackCapture >> whiteCaptrue;
+
+        board.whiteCapture = whiteCaptrue;
+        board.blackCapture = blackCapture;
 
         currentPlayer = static_cast<Stone>(playerInt);
 
@@ -179,6 +194,7 @@ bool Game::redoMove() {
 
 void Game::handleEndGame() {
     std::cerr << "Game Over triggered.\n";
+	std::cerr << "consecutivePasses = " << consecutivePasses << std::endl;
     isGameOver = true;
 
     return;
@@ -211,6 +227,10 @@ void Game::passTurn() {
         return; // Không cho phép bỏ lượt khi game đã kết thúc
     }
 
+    if (currentMode == GameMode::PlayerVsAI && !isGameOver && currentPlayer == Stone::Black && currentDifficulty == Difficulty::Hard) {
+        AIHard::reportMove(-1, -1, Stone::Black);
+    }
+
     // Đổi lượt người chơi
     currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
     consecutivePasses++; // Tăng biến đếm
@@ -230,12 +250,23 @@ void Game::passTurn() {
 }
 
 bool Game::placeStone(int row, int col, Stone player) {
+    if (row == -1 && col == -1) {
+        passTurn();
+        return true;
+    }
+
 	if (board.placeStone(row, col, player)) {
         // Lưu lại trạng thái để có thể undo
+
+        if (currentMode == GameMode::PlayerVsAI && !isGameOver && currentPlayer == Stone::Black && currentDifficulty == Difficulty::Hard) {
+            AIHard::reportMove(row, col, Stone::Black);
+        }
+
         moveHistory.push(board.getBoardState());
         while (!redoHistory.empty()) redoHistory.pop();
         currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
         consecutivePasses = 0; // Reset lượt pass liên tiếp khi có nước đi
+
         return true;
     }
     else {
@@ -256,6 +287,8 @@ std::pair<float, float> Game::calculateFinalScores() const {
 
     // Điểm của Trắng = (Lãnh thổ của Trắng) + (Số quân Đen bắt được) + Komi
     float finalWhiteScore = static_cast<float>(whiteTerritory + board.whiteCapture) + Komi;
+
+	// std::cerr << "Final territory Calculated: Black = " << blackTerritory << ", White = " << whiteTerritory << std::endl;
 
     return { finalBlackScore, finalWhiteScore };
 }

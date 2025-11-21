@@ -78,6 +78,8 @@ private:
     std::pair<float, float> calculateFinalScores() const;
 
     void toggleSound(); // Hàm bật/tắt âm thanh
+    void playMusic();
+	void stopMusic();
     void updateNotification(const std::string& message);
 
     // Thêm các vector menu item cho menu chọn độ khó
@@ -118,6 +120,7 @@ private:
 
     // Âm thanh
     sf::SoundBuffer placeSoundBuffer, captureSoundBuffer;
+    sf::Music backgroundSound;
     sf::Sound placeSound, captureSound;
     bool isSoundEnabled;
 
@@ -157,6 +160,9 @@ private:
 
     sf::Texture CenterboardTexture;
     sf::Sprite CenterboardSprite;
+
+    sf::Texture SpotTexture;
+    sf::Sprite SpotSprite;
 
     sf::Texture BackGroundTexture;
     sf::Sprite BackGroundSprite;

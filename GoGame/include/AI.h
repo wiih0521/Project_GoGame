@@ -1,7 +1,8 @@
 ﻿#ifndef AI_H
 #define AI_H
 
-#include "Board.h" // Nơi định nghĩa struct Move, Stone, và class Board
+#include "../include/Board.h"
+#include "../include/AI_hard.h"
 #include <vector>
 #include <utility>
 
@@ -17,6 +18,7 @@ public:
 
 private:
     Difficulty difficulty;
+	
 
     // --- Các chiến lược chính ---
     Move findRandomMove(const Board& board, Stone player) const;

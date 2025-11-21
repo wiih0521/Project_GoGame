@@ -1,0 +1,80 @@
+Pachi 12.86:
+- katago cpu build
+- added --modern-joseki option
+- validate gtp input
+- many fixes (rave, playout, mm, seki ...)
+- updated joseki fixes database (2025-02-11)
+
+Pachi 12.84:
+- added --banner option (replaces "banner" uct param)
+- fixed options that got broken in 12.80 (--kgs, --kgs-chat, --noundo, --name work again)
+- fixed memory corruptions found by address sanitizer
+- minor josekifix and mm fixes
+- updated joseki fixes database (2023-08-21)
+
+Pachi 12.82:
+- retuned dcnn and pattern priors
+- use progressive dcnn prior
+- normalize pattern probabilities
+- set number of threads for dcnn evaluation
+
+Pachi 12.80:
+- filter more dcnn blunders
+- better mm atari patterns
+- updated joseki fixes database (2023-05-12) + code 
+- uct search speedup
+
+Pachi 12.70:
+- joseki fixes from Pachi games (2018-2022)
+- allow to override joseki sequences by editing an SGF file
+- better bent-four handling
+- fixed some dcnn blunders (first-line connects)
+
+Pachi 12.60:
+- fixed remaining seki issues
+- removed --accurate-scoring, unnecessary now
+- --smart-pass: more user-friendly pass behavior
+- fixed tree gc issues
+
+Pachi 12.50:
+- fixed analyze issues in Sabaki
+- automatically grow tree memory as needed
+- fixed kgsgtp-3.5.20+ crashes (kgs-chat disabled by default now)
+
+Pachi 12.45:
+- --accurate-scoring: use GnuGo to compute dead stones at the end
+- --fuseki-time stops after move 10 instead of 20
+- endgame pass fixes
+- fixed gtp undo timer issue
+
+Pachi 12.40:
+- speedup, about 20% faster
+- multiple dcnns support: detlef44, detlef54, darkforest
+- lz-genmove_analyze support (get winrates in sabaki etc)
+- lz-analyze: handle frequency
+- set engine options over gtp (pachi-setoption)
+- dcnn pondering fix
+
+Pachi 12.30:
+- lizzie support !
+- dcnn pondering
+- japanese rules: territory scoring in playouts
+- full gtp undo
+
+Pachi 12.20:
+- dcnn: handle smaller board sizes
+- don't play slack when taking handicap
+- mm patterns fixes, better prediction rate
+- use joseki engine when playing without dcnn
+
+Pachi 12.10:
+- mm patterns
+- playouts: handle bent-four, special sekis
+- infrastructure fixes
+
+Pachi 12.00:
+- dcnn support
+- better performance on windows
+- default settings changed, see readme
+- x64 build
+
