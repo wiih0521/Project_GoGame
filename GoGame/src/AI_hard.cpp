@@ -62,7 +62,7 @@ bool AIHard::startEngine(std::string path, int size) {
 
     std::cout << "--- Dang khoi dong bot ---" << std::endl;
 
-    // Vòng lặp: Đọc liên tục cho đến khi Fuego im lặng quá 500ms
+    // Vòng lặp: Đọc liên tục cho đến khi Bot im lặng quá 500ms
     char buffer[4096];
     DWORD dwRead;
     DWORD dwAvail = 0;
@@ -84,17 +84,15 @@ bool AIHard::startEngine(std::string path, int size) {
             silenceTime++;
         }
 
-        // Kiểm tra lỡ Fuego chết giữa chừng
+        // Kiểm tra lỡ Bot chết giữa chừng
         DWORD exitCode;
         if (GetExitCodeProcess(g_hChildProcess, &exitCode) && exitCode != STILL_ACTIVE) {
-            std::cerr << "bot da tat dot ngot khi dang khoi dong!" << std::endl;
+            std::cerr << "Bot da tat dot ngot khi dang khoi dong!" << std::endl;
             return false;
         }
     }
 
-    std::cout << "het intro roi day" << "\n";
-
-    std::cout << "\n--- bot da san sang ---" << std::endl;
+    std::cout << "\n--- Bot da san sang ---" << std::endl;
 
     // 3. Gửi lệnh "BẮT TAY" (Handshake)
 // Lệnh 'name' là lệnh chuẩn GTP, engine nào cũng phải trả lời
@@ -153,7 +151,7 @@ std::string AIHard::sendCommand(std::string cmd) {
     }
 
     // 4. QUAN TRỌNG NHẤT: Đẩy dữ liệu đi ngay lập tức
-    // Nếu thiếu dòng này, lệnh sẽ nằm trong bộ đệm và Fuego không nhận được -> Gây treo
+    // Nếu thiếu dòng này, lệnh sẽ nằm trong bộ đệm và bot không nhận được -> Gây treo
     FlushFileBuffers(g_hChildStd_IN_Wr);
 
     // 5. Vòng lặp đọc phản hồi
@@ -168,7 +166,7 @@ std::string AIHard::sendCommand(std::string cmd) {
     while (!finished) {
         DWORD dwAvail = 0;
 
-        // A. Kiểm tra xem Fuego còn sống không? (Tránh treo vĩnh viễn nếu Engine crash)
+        // A. Kiểm tra xem bot còn sống không? (Tránh treo vĩnh viễn nếu Engine crash)
         DWORD exitCode;
         if (GetExitCodeProcess(g_hChildProcess, &exitCode) && exitCode != STILL_ACTIVE) {
             std::cerr << "[LOI] Bot process da chet! Exit code: " << exitCode << std::endl;
@@ -228,7 +226,7 @@ std::string AIHard::sendCommand(std::string cmd) {
 }
 // --- PHẦN XỬ LÝ LOGIC CỜ VÂY ---
 
-// Chuyển đổi tọa độ: Fuego dùng A19 (Góc trên trái), Board dùng (0,0) (Góc trên trái)
+// Chuyển đổi tọa độ: bot dùng A19 (Góc trên trái), Board dùng (0,0) (Góc trên trái)
 // Lưu ý: GTP cột là A-T (bỏ chữ I), Hàng từ dưới đếm lên (1 ở dưới, 19 ở trên)
 std::string AIHard::coordsToString(int row, int col, int boardSize) {
     if (row == -1) return "pass";
@@ -307,7 +305,7 @@ Move AIHard::getBestMove(Stone playerColor) {
 
     std::string response = sendCommand(cmd);
 
-    // Phân tích phản hồi từ Fuego
+    // Phân tích phản hồi từ bot
     std::pair<int, int> bestMove = stringToCoords(response, currentBoardSize);
 	return { bestMove.first, bestMove.second, playerColor };
 }

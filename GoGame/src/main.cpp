@@ -16,7 +16,7 @@ int main() {
         exit(1);
     }
     else {
-        std::cerr << "Da khoi dong fuego" << "\n";
+        std::cerr << "Da khoi dong pachi" << "\n";
     }
 
     UI goGame;
