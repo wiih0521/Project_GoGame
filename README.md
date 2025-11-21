@@ -28,6 +28,7 @@ The game uses both mouse and keyboard for interaction:
 | **Y Key** | Redo Move |
 | **P Key** | Pass Move |
 | **R Key** | Restart Game |
+| **Esc Key** | Back to main menu |
 
 ## 📦 Installation & How to Play
 
