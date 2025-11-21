@@ -130,25 +130,36 @@ Move AI::findRandomMove(const Board& board, Stone player) const {
 Move AI::findMediumMove(const Board& board, Stone player) const {
     auto validMoves = getValidMoves(board, player);
 
-    int passScore = evaluateBoard(board, player);
-    int bestScore = passScore;
-    Move bestMove = { -1, -1, player }; // Nước đi "pass"
+    // Nếu không còn nước đi
+    if (validMoves.empty()) return { -1, -1, player };
+
+    // Shuffle để nếu các điểm số bằng nhau, AI sẽ chọn ngẫu nhiên nước khác nhau mỗi lần chơi
+    std::shuffle(validMoves.begin(), validMoves.end(), g);
+
+    int currentBoardScore = evaluateBoard(board, player);
+    int bestScore = std::numeric_limits<int>::min();
+    Move bestMove = validMoves[0]; // Mặc định chọn nước đầu tiên sau khi shuffle
 
     for (const auto& move : validMoves) {
         Board tempBoard = placeStoneSimulated(board, move.row, move.col, player);
+
+        // Kiểm tra Ko hoặc lặp lại trạng thái
         if (tempBoard.getBoardState() == board.getBoardState()) continue;
 
-        int currentScore = evaluateBoard(tempBoard, player);
+        int score = evaluateBoard(tempBoard, player);
 
-        if (currentScore > bestScore) {
-            bestScore = currentScore;
+        // Logic "Atari" cơ bản: Nếu nước đi này khiến địch còn 1 khí -> Ưu tiên cao
+        // Giúp AI biết tấn công hơn
+        /* (Tuỳ chọn: Bạn có thể thêm logic kiểm tra nước đi này có bắt quân ngay lập tức không để bonus thêm) */
+
+        if (score > bestScore) {
+            bestScore = score;
             bestMove = move;
         }
     }
 
-    if (bestMove.row == -1) {
-        std::cerr << "AI (Medium) chose to pass strategically.\n";
-    }
+    // Nếu nước đi tốt nhất còn tệ hơn pass (ví dụ board đã đầy hoặc bất lợi), cân nhắc pass
+    // Tuy nhiên ở Medium, cứ để nó đánh hết quan cũng được.
     return bestMove;
 }
 
@@ -238,15 +249,36 @@ int AI::minimax(const Board& board, int depth, bool isMaximizing, Stone aiPlayer
 // ==                    EVALUATION & HELPER FUNCTIONS                         ==
 // ==============================================================================
 
+// Hàm tính điểm dựa trên vị trí quân cờ (Ưu tiên đường 3 và 4)
+int AI::getPositionalScore(int r, int c, int boardSize) const {
+    // Khoảng cách từ quân cờ đến mép bàn cờ gần nhất
+    int distRow = std::min(r, boardSize - 1 - r);
+    int distCol = std::min(c, boardSize - 1 - c);
+    int minEdgeDist = std::min(distRow, distCol);
+
+    // Đường biên (Line 1) - Index 0: Rất thấp (trừ khi để nối hoặc bắt quân)
+    if (minEdgeDist == 0) return 1;
+    // Đường 2 (Line 2) - Index 1: Thấp (thường là nước bò biên thụ động)
+    if (minEdgeDist == 1) return 2;
+    // Đường 3 (Line 3) - Index 2: Tốt (Lấy đất)
+    if (minEdgeDist == 2) return 10;
+    // Đường 4 (Line 4) - Index 3: Rất tốt (Lấy thế/Influence)
+    if (minEdgeDist == 3) return 8;
+    // Thiên nguyên/Trung tâm: Bình thường
+    return 5;
+}
+
 int AI::evaluateBoard(const Board& board, Stone player) const {
     Stone opponent = (player == Stone::Black) ? Stone::White : Stone::Black;
     int score = 0;
 
-    const int ALIVE_GROUP_WEIGHT = 200;
-    const int TERRITORY_WEIGHT = 10;
-    const int DEFENSIVE_STRUCTURE_WEIGHT = 5;
-    const int CAPTURE_WEIGHT = 100;
+    // --- BỘ THAM SỐ MỚI (ĐÃ CÂN CHỈNH) ---
+    const int CAPTURE_WEIGHT = 80;      // Vẫn quan trọng, nhưng giảm bớt để ko quá tham ăn
+    const int TERRITORY_WEIGHT = 15;    // Tăng nhẹ tầm quan trọng của đất
+    const int LIBERTY_WEIGHT = 3;       // MỚI: Khuyến khích nước đi thoáng, nhiều khí
+    const int POSITION_WEIGHT = 1;      // MỚI: Hệ số nhân cho vị trí đẹp
 
+    // 1. Điểm bắt quân (Capture)
     if (player == Stone::Black) {
         score += board.blackCapture * CAPTURE_WEIGHT;
         score -= board.whiteCapture * CAPTURE_WEIGHT;
@@ -256,12 +288,40 @@ int AI::evaluateBoard(const Board& board, Stone player) const {
         score -= board.blackCapture * CAPTURE_WEIGHT;
     }
 
-    score += countAliveGroups(board, player) * ALIVE_GROUP_WEIGHT;
-    score -= countAliveGroups(board, opponent) * ALIVE_GROUP_WEIGHT;
+    // 2. Duyệt qua bàn cờ để tính Lãnh thổ (Territory), Khí (Liberties) và Vị trí (Position)
+    // Lưu ý: Ta bỏ countAliveGroups (2 mắt) vì nó quá tốn kém và làm AI đánh co cụm.
+
+    int myLiberties = 0;
+    int oppLiberties = 0;
+    int myPosScore = 0;
+    int oppPosScore = 0;
+
+    for (int r = 0; r < board.getSize(); ++r) {
+        for (int c = 0; c < board.getSize(); ++c) {
+            Stone s = board.getStone(r, c);
+            if (s == player) {
+                // Cộng điểm khí
+                myLiberties += board.countLiberties(r, c, player);
+                // Cộng điểm vị trí
+                myPosScore += getPositionalScore(r, c, board.getSize());
+            }
+            else if (s == opponent) {
+                oppLiberties += board.countLiberties(r, c, opponent);
+                oppPosScore += getPositionalScore(r, c, board.getSize());
+            }
+        }
+    }
+
+    score += myLiberties * LIBERTY_WEIGHT;
+    score -= oppLiberties * LIBERTY_WEIGHT; // Trừ điểm nếu địch mạnh
+
+    score += myPosScore * POSITION_WEIGHT;
+    score -= oppPosScore * POSITION_WEIGHT;
+
+    // 3. Territory (Lãnh thổ)
+    // Chỉ tính khi đã vây kín (dùng hàm cũ của bạn)
     score += countTerritory(board, player) * TERRITORY_WEIGHT;
     score -= countTerritory(board, opponent) * TERRITORY_WEIGHT;
-    score += countDefensiveStructures(board, player) * DEFENSIVE_STRUCTURE_WEIGHT;
-    score -= countDefensiveStructures(board, opponent) * DEFENSIVE_STRUCTURE_WEIGHT;
 
     return score;
 }
