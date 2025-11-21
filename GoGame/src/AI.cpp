@@ -1,5 +1,6 @@
 ﻿#include "../include/AI.h"
 #include "../include/Board.h"
+#include "../include/AI_hard.h"
 #include <vector>
 #include <random>
 #include <algorithm>
@@ -78,7 +79,7 @@ std::vector<Move> AI::getValidMoves(const Board& board, Stone player) const {
 }
 
 Move AI::findBestMove(const Board& board, Stone player) const {
-    int moveCount = 0;
+    /*int moveCount = 0;
     for (int r = 0; r < board.getSize(); ++r) {
         for (int c = 0; c < board.getSize(); ++c) {
             if (board.getStone(r, c) != Stone::None) moveCount++;
@@ -91,7 +92,11 @@ Move AI::findBestMove(const Board& board, Stone player) const {
         if (tempCheckBoard.placeStone(center, center, player)) {
             return { center, center, player };
         }
-    }
+    }*/
+
+	std::cerr << "AI is selecting move for difficulty level: ";
+    std::cerr << (static_cast<int>(difficulty) == 0 ? "Easy\n" :
+        (static_cast<int>(difficulty) == 1 ? "Medium\n" : "Hard\n")) << "\n";
 
     switch (difficulty) {
     case Difficulty::Easy:
@@ -99,7 +104,10 @@ Move AI::findBestMove(const Board& board, Stone player) const {
     case Difficulty::Medium:
         return findMediumMove(board, player);
     case Difficulty::Hard:
-        return findHardMove(board, player);
+		// std::cerr << "Something is missing\n";
+        Move move = AIHard::getBestMove(player);
+		std::cerr << "AI (Hard) selected move: (" << move.row << ", " << move.col << ")\n";
+        return move;
     default:
         return findRandomMove(board, player);
     }

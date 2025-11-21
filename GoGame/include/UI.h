@@ -158,6 +158,9 @@ private:
     sf::Texture CenterboardTexture;
     sf::Sprite CenterboardSprite;
 
+    sf::Texture SpotTexture;
+    sf::Sprite SpotSprite;
+
     sf::Texture BackGroundTexture;
     sf::Sprite BackGroundSprite;
 };
