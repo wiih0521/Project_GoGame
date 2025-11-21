@@ -31,12 +31,18 @@ UI::UI() : window(sf::VideoMode(1920, 1080), "Go Game", sf::Style::Default), cur
     }
 
     // Tải âm thanh
-    if (!placeSoundBuffer.loadFromFile("assets/sounds/place_stone.wav")) std::cerr << "Error loading place sound\n";
-    if (!captureSoundBuffer.loadFromFile("assets/sounds/capture.wav")) std::cerr << "Error loading capture sound\n";
+    if (!placeSoundBuffer.loadFromFile("assets/sounds/clicksound.mp3")) std::cerr << "Error loading place sound\n";
+    // if (!captureSoundBuffer.loadFromFile("assets/sounds/capture.wav")) std::cerr << "Error loading capture sound\n";
+    if (!backgroundSound.openFromFile("assets/sounds/background.ogg")) std::cerr << "Error loading background sound\n";
     if (!mainmenuBackgroundTexture.loadFromFile("assets/images/mainmenu_background.png")) std::cerr << "Error loading main menu background image\n";
+
+    if (isSoundEnabled) {
+        playMusic();
+    }
 
     placeSound.setBuffer(placeSoundBuffer);
     captureSound.setBuffer(captureSoundBuffer);
+    // backgroundSound.setBuffer(backgroundSoundBuffer);
 
     // Cài đặt ban đầu cho các text UI
     turnIndicatorText.setFont(font);
@@ -778,6 +784,22 @@ void UI::passTurn() {
 
 void UI::toggleSound() {
     isSoundEnabled = !isSoundEnabled;
+    if (isSoundEnabled) {
+        playMusic();
+    }
+    else {
+        stopMusic();
+	}
+
     updateNotification("Sound " + (isSoundEnabled ? std::string("ON") : std::string("OFF")));
     setupSettingsMenu(); // Gọi lại để cập nhật text và vị trí của nút Sound
+}
+
+void UI::playMusic() {
+    backgroundSound.setLoop(true); // Lặp lại liên tục
+    backgroundSound.play();
+}
+
+void UI::stopMusic() {
+    backgroundSound.stop();
 }
