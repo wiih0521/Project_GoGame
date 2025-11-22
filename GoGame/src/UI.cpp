@@ -8,23 +8,18 @@
 #include <memory>
 #include <algorithm> 
 #include <tuple>     
-#include <thread> // Add this at the top of the file for std::this_thread::sleep_for
-#include <chrono> // Add this for std::chrono::milliseconds
-
-const int BoardSize = 19; // size of game board
-//const int MaxBoardSize = 19; // maximum size of game board
-const int CellSize = 50; // base on size of (c).png
-const float notificationSize = 20;
-const float totalBoardPixelSize = BoardSize * CellSize;
+#include <thread>
+#include <chrono> 
 
 const sf::Color darkGreen(0, 100, 0);
 
-UI::UI() : window(sf::VideoMode(1920, 1080), "Go Game", sf::Style::Default), currentGameState(GameState::MainMenu), isSoundEnabled(true) {
-    // 1. Tạo cửa sổ với kích thước bất kỳ (ví dụ 800x600), dùng Style::Default
-    // window.create(sf::VideoMode(1200, 800), "Go Game", sf::Style::Default);
-
-    // 2. Gọi lệnh của Windows để phóng to (Maximize) cửa sổ
+UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style::Default), currentGameState(GameState::MainMenu), isSoundEnabled(true) {
     ShowWindow(window.getSystemHandle(), SW_MAXIMIZE);
+
+    view.setSize((float)baseWindowX, (float)baseWindowY);
+    view.setCenter((float)baseWindowX / 2.0f, (float)baseWindowY / 2.0f);
+    resizeView(window, view);
+    window.setView(view);
 
     if (!font.loadFromFile("assets/fonts/arial.ttf")) {
         std::cerr << "Error loading font\n";
@@ -48,14 +43,19 @@ UI::UI() : window(sf::VideoMode(1920, 1080), "Go Game", sf::Style::Default), cur
     turnIndicatorText.setFont(font);
     turnIndicatorText.setCharacterSize(24);
     turnIndicatorText.setFillColor(sf::Color::Black);
-    turnIndicatorText.setPosition(CellSize, window.getSize().y - 50);
+    turnIndicatorText.setPosition(baseCellSize, baseWindowY - 50);
 
     // Main menu
 	mainmenuBackgroundSprite.setTexture(mainmenuBackgroundTexture);
+    sf::Vector2u bgSize = mainmenuBackgroundTexture.getSize();
+    mainmenuBackgroundSprite.setScale(
+        (float)baseWindowX / bgSize.x,
+        (float)baseWindowY / bgSize.y
+    );
 
     // KHỞI TẠO UI CHO MÀN HÌNH GAME OVER 
     // Lớp phủ
-    gameOverOverlay.setSize(sf::Vector2f(window.getSize()));
+    gameOverOverlay.setSize(sf::Vector2f((float)baseWindowX, (float)baseWindowY));
     gameOverOverlay.setFillColor(sf::Color(0, 0, 0, 80)); // Màu đen, trong suốt nhẹ
 
     // Tiêu đề "GAME OVER"
@@ -96,6 +96,7 @@ UI::UI() : window(sf::VideoMode(1920, 1080), "Go Game", sf::Style::Default), cur
     // Khởi tạo nền menu (có thể thay bằng hình ảnh)
     menuBackground.setSize(sf::Vector2f(window.getSize()));
     menuBackground.setFillColor(sf::Color(50, 50, 50, 180)); // Nền mờ
+    menuBackground.setSize(sf::Vector2f((float)baseWindowX, (float)baseWindowY));
 
     // Tải assets - bạn cần đảm bảo các tệp này tồn tại
     if (!BottomboardTexture.loadFromFile("assets/images/b.png")) std::cerr << "Error loading board texture\n";
@@ -124,6 +125,10 @@ UI::UI() : window(sf::VideoMode(1920, 1080), "Go Game", sf::Style::Default), cur
     CenterboardSprite.setTexture(CenterboardTexture);
     SpotSprite.setTexture(SpotTexture);
     BackGroundSprite.setTexture(BackGroundTexture);
+
+    // smooth
+    blackStoneTexture.setSmooth(true);
+    whiteStoneTexture.setSmooth(true);
 
     blackStoneSprite.setTexture(blackStoneTexture);
     whiteStoneSprite.setTexture(whiteStoneTexture);
@@ -194,16 +199,21 @@ void UI::processEvents() {
         if (event.type == sf::Event::Closed)
             window.close();
 
+        if (event.type == sf::Event::Resized) {
+            resizeView(window, view);
+            window.setView(view);
+        }
+
         switch (currentGameState) {
         case GameState::MainMenu: handleMainMenuEvents(event); break;
         case GameState::Playing: handlePlayingEvents(event); break;
         case GameState::Settings: handleSettingsEvents(event); break;
         case GameState::DifficultySelect: // Xử lý sự kiện cho menu chọn độ khó
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-                activateMenuItem(difficultySelectButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y)));
+                activateMenuItem(difficultySelectButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y), view));
             }
             else if (event.type == sf::Event::MouseMoved) {
-                highlightMenuItem(difficultySelectButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseMove.x, event.mouseMove.y)));
+                highlightMenuItem(difficultySelectButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseMove.x, event.mouseMove.y), view));
             }
             break;
 
@@ -255,7 +265,9 @@ void UI::update() {
 }
 
 void UI::render() {
-    window.clear(sf::Color(200, 150, 100));
+    window.clear(sf::Color(20, 20, 20));
+
+    window.setView(view);
 
     switch (currentGameState) {
     case GameState::MainMenu:
@@ -296,7 +308,7 @@ void UI::updateNotification(const std::string& message) {
     notificationText.setStyle(sf::Text::Bold);
     notificationText.setCharacterSize(20);
     notificationText.setFillColor(sf::Color::Red);
-    notificationText.setPosition(window.getSize().x / 2.0f, window.getSize().y - 30);
+    notificationText.setPosition(baseWindowX / 2.0f, baseWindowY - 30);
 
     notificationText.setString(message);
     sf::FloatRect textRect = notificationText.getLocalBounds();
@@ -307,10 +319,10 @@ void UI::updateNotification(const std::string& message) {
 // === Xử lý sự kiện cho từng trạng thái ===
 void UI::handleMainMenuEvents(const sf::Event& event) {
     if (event.type == sf::Event::MouseMoved) {
-        highlightMenuItem(mainMenuButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseMove.x, event.mouseMove.y)));
+        highlightMenuItem(mainMenuButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseMove.x, event.mouseMove.y), view));
     }
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-        activateMenuItem(mainMenuButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y)));
+        activateMenuItem(mainMenuButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y), view));
     }
 }
 
@@ -338,10 +350,10 @@ void UI::handlePlayingEvents(const sf::Event& event) {
 
 void UI::handleSettingsEvents(const sf::Event& event) {
     if (event.type == sf::Event::MouseMoved) {
-        highlightMenuItem(settingsButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseMove.x, event.mouseMove.y)));
+        highlightMenuItem(settingsButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseMove.x, event.mouseMove.y), view));
     }
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-        activateMenuItem(settingsButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y)));
+        activateMenuItem(settingsButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y), view));
     }
     if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
         currentGameState = GameState::MainMenu; // Quay về Main Menu
@@ -393,7 +405,7 @@ void UI::renderSettings() {
     settingsTitle.setFillColor(sf::Color::White);
     sf::FloatRect textRect = settingsTitle.getLocalBounds();
     settingsTitle.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
-    settingsTitle.setPosition(window.getSize().x / 2.0f, 100);
+    settingsTitle.setPosition(baseWindowX / 2.0f, 100);
     window.draw(settingsTitle);
 
     drawMenu(window, settingsButtons);
@@ -421,7 +433,7 @@ void UI::setupMainMenu() {
     float ButtonHeight = 50.f;
 
     float totalHeight = buttonData.size() * SpaceSize;
-    float startY = window.getSize().y / 2.0f - totalHeight / 2.0f + 50.f;
+    float startY = baseWindowY / 2.0f - totalHeight / 2.0f + 50.f;
 
     mainMenuButtons.clear();
 
@@ -444,7 +456,7 @@ void UI::setupMainMenu() {
 
         item.backgroundRect.setSize(sf::Vector2f(ButtonWidth, ButtonHeight));
         item.backgroundRect.setOrigin(ButtonWidth / 2.0f, ButtonHeight / 2.0f);
-        item.backgroundRect.setPosition(window.getSize().x / 2.0f, startY + i * SpaceSize);
+        item.backgroundRect.setPosition(baseWindowX / 2.0f, startY + i * SpaceSize);
         item.backgroundRect.setFillColor(sf::Color(0, 0, 0, 180));
         item.backgroundRect.setOutlineColor(sf::Color::White);
         item.backgroundRect.setOutlineThickness(2.0f);
@@ -470,7 +482,7 @@ void UI::setupDifficultySelectMenu() {
     float ButtonHeight = 50.f;
 
     float totalHeight = difficultyData.size() * SpaceSize;
-    float startY = window.getSize().y / 2.0f - totalHeight / 2.0f + 50.f;
+    float startY = baseWindowY / 2.0f - totalHeight / 2.0f + 50.f;
 
     difficultySelectButtons.clear();
 
@@ -499,7 +511,7 @@ void UI::setupDifficultySelectMenu() {
 
         item.backgroundRect.setSize(sf::Vector2f(ButtonWidth, ButtonHeight));
         item.backgroundRect.setOrigin(ButtonWidth / 2.0f, ButtonHeight / 2.0f);
-        item.backgroundRect.setPosition(window.getSize().x / 2.0f, startY + i * SpaceSize);
+        item.backgroundRect.setPosition(baseWindowX / 2.0f, startY + i * SpaceSize);
         item.backgroundRect.setFillColor(sf::Color(0, 0, 0, 180));
         item.backgroundRect.setOutlineColor(sf::Color::White);
         item.backgroundRect.setOutlineThickness(2.0f);
@@ -512,7 +524,7 @@ void UI::setupDifficultySelectMenu() {
 
 // === SỬA ĐỔI setupSettingsMenu ===
 void UI::setupSettingsMenu() {
-    float startY = window.getSize().y / 2.0f - 50.0f; // Điều chỉnh vị trí bắt đầu
+    float startY = baseWindowY / 2.0f - 50.0f; // Điều chỉnh vị trí bắt đầu
     float spacing = 80.0f;
     float ButtonWidth = 350.f;
     float ButtonHeight = 50.f;
@@ -533,7 +545,7 @@ void UI::setupSettingsMenu() {
 
         item.backgroundRect.setSize(sf::Vector2f(ButtonWidth, ButtonHeight));
         item.backgroundRect.setOrigin(ButtonWidth / 2.0f, ButtonHeight / 2.0f);
-        item.backgroundRect.setPosition(window.getSize().x / 2.0f, startY + index * spacing);
+        item.backgroundRect.setPosition(baseWindowX / 2.0f, startY + index * spacing);
         item.backgroundRect.setFillColor(sf::Color(0, 0, 0, 180));
         item.backgroundRect.setOutlineColor(sf::Color::White);
         item.backgroundRect.setOutlineThickness(2.0f);
@@ -649,11 +661,13 @@ void UI::activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& 
 void UI::handlePlayerInput(const sf::Vector2i& mousePos) {
     if (game.isGameOver || (game.currentMode == GameMode::PlayerVsAI && game.currentPlayer == Stone::White)) return;
 
-    float spacing = CellSize;
+    float spacing = baseCellSize;
     float offset = 50;
 
-    int col = static_cast<int>((mousePos.x - offset - LeftborderSize + spacing / 2) / spacing);
-    int row = static_cast<int>((mousePos.y - offset - LeftborderSize + spacing / 2) / spacing);
+    sf::Vector2f worldPos = window.mapPixelToCoords(mousePos, view);
+
+    int col = static_cast<int>((worldPos.x - offset - LeftborderSize + spacing / 2) / spacing);
+    int row = static_cast<int>((worldPos.y - offset - LeftborderSize + spacing / 2) / spacing);
 
     if (!game.board.isWithinBounds(row, col)) {
         updateNotification("Invalid position click.");
@@ -748,13 +762,15 @@ void UI::handleEndGame() {
     winnerMessageText.setString(winnerStr);
 
     // Căn giữa và định vị các text trên màn hình
-    float centerX = window.getSize().x / 2.0f;
+    float centerX = baseWindowX / 2.0f;
 
     // Hàm trợ giúp để căn giữa text
-    auto centerText = [](sf::Text& text) {
+    auto centerText = [&](sf::Text& text) {
         sf::FloatRect bounds = text.getLocalBounds();
         text.setOrigin(bounds.left + bounds.width / 2.0f - (totalBoardPixelSize - LeftborderSize) / 2, bounds.top + bounds.height / 2.0f);
         };
+
+    gameOverOverlay.setSize(sf::Vector2f((float)baseWindowX, (float)baseWindowY));
 
     centerText(gameOverTitleText);
     gameOverTitleText.setPosition(centerX, 150.0f);
@@ -802,4 +818,28 @@ void UI::playMusic() {
 
 void UI::stopMusic() {
     backgroundSound.stop();
+}
+
+void UI::resizeView(const sf::RenderWindow& window, sf::View& view) {
+    // Tỷ lệ khung hình logic (Base resolution)
+    // Giả sử baseWindowX/Y là kích thước thiết kế (ví dụ 1920x1080)
+    float targetAspectRatio = (float)baseWindowX / (float)baseWindowY;
+
+    sf::Vector2u size = window.getSize();
+    float windowAspectRatio = (float)size.x / (float)size.y;
+
+    if (windowAspectRatio >= targetAspectRatio) {
+        // Cửa sổ bè hơn -> Thêm dải đen trái phải
+        view.setSize((float)baseWindowX, (float)baseWindowY);
+        float viewportWidth = size.y * targetAspectRatio / size.x;
+        float viewportLeft = (1.0f - viewportWidth) / 2.0f;
+        view.setViewport(sf::FloatRect(viewportLeft, 0.0f, viewportWidth, 1.0f));
+    }
+    else {
+        // Cửa sổ cao hơn (thường gặp khi Maximize có thanh tiêu đề) -> Thêm dải đen trên dưới
+        view.setSize((float)baseWindowX, (float)baseWindowY);
+        float viewportHeight = size.x / targetAspectRatio / size.y;
+        float viewportTop = (1.0f - viewportHeight) / 2.0f;
+        view.setViewport(sf::FloatRect(0.0f, viewportTop, 1.0f, viewportHeight));
+    }
 }

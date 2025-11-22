@@ -47,9 +47,22 @@ public:
     void draw(sf::RenderWindow& window);
 
 private:
+    const int BoardSize = 19;
+    const int baseCellSize = 50;
+    const float notificationSize = 20;
+    const float totalBoardPixelSize = BoardSize * baseCellSize;
+	const int baseWindowY = 1080;
+	const int baseWindowX = 1920;
+
+    float scaleRatio;
+    float cellSize;
+
     void processEvents();
     void update();
     void render();
+
+    sf::View view; // Camera để xử lý co giãn
+    void resizeView(const sf::RenderWindow& window, sf::View& view); 
 
     // Các hàm xử lý trạng thái
     void handleMainMenuEvents(const sf::Event& event);
@@ -91,10 +104,6 @@ private:
 
     // Trạng thái game hiện tại
     GameState currentGameState;
-
-    // Stacks for Undo/Redo
-    /*std::stack<std::vector<std::vector<Stone>>> moveHistory;
-    std::stack<std::vector<std::vector<Stone>>> redoHistory;*/
 
     // UI elements
     sf::Font font;
