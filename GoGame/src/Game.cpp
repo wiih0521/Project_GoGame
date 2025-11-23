@@ -214,7 +214,6 @@ void Game::handleEndGame() {
         winnerStr = "IT'S A DRAW!";
     }
 
-    // Cập nhật nội dung cho các Text object
     std::stringstream ss;
     ss << std::fixed << std::setprecision(1);
     ss << "Black Score: " << blackScore << "\n"
@@ -224,21 +223,19 @@ void Game::handleEndGame() {
 
 void Game::passTurn() {
     if (isGameOver) {
-        return; // Không cho phép bỏ lượt khi game đã kết thúc
+        return; 
     }
 
     if (currentMode == GameMode::PlayerVsAI && !isGameOver && currentPlayer == Stone::Black && currentDifficulty == Difficulty::Hard) {
         AIHard::reportMove(-1, -1, Stone::Black);
     }
 
-    // Đổi lượt người chơi
     currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
-    consecutivePasses++; // Tăng biến đếm
+    consecutivePasses++; 
     std::cerr << "accessed passTurn()\n";
 
     std::cout << "Turn passed. Consecutive passes: " << consecutivePasses << std::endl;
 
-    // Lưu lại trạng thái để có thể undo
     moveHistory.push(board.getBoardState());
     while (!redoHistory.empty()) redoHistory.pop();
 
@@ -256,8 +253,6 @@ bool Game::placeStone(int row, int col, Stone player) {
     }
 
 	if (board.placeStone(row, col, player)) {
-        // Lưu lại trạng thái để có thể undo
-
         if (currentMode == GameMode::PlayerVsAI && !isGameOver && currentPlayer == Stone::Black && currentDifficulty == Difficulty::Hard) {
             AIHard::reportMove(row, col, Stone::Black);
         }
@@ -265,7 +260,7 @@ bool Game::placeStone(int row, int col, Stone player) {
         moveHistory.push(board.getBoardState());
         while (!redoHistory.empty()) redoHistory.pop();
         currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
-        consecutivePasses = 0; // Reset lượt pass liên tiếp khi có nước đi
+        consecutivePasses = 0; 
 
         return true;
     }
@@ -275,13 +270,11 @@ bool Game::placeStone(int row, int col, Stone player) {
 }
 
 std::pair<float, float> Game::calculateFinalScores() const {
-    // 1. Lấy điểm lãnh thổ từ đối tượng Board
     const float Komi = 6.5;
     std::pair<int, int> territoryScores = board.calculateScores();
     int blackTerritory = territoryScores.first;
     int whiteTerritory = territoryScores.second;
 
-    // 2. Tính điểm cuối cùng
     // Điểm của Đen = (Lãnh thổ của Đen) + (Số quân Trắng bắt được)
     float finalBlackScore = static_cast<float>(blackTerritory + board.blackCapture);
 
@@ -289,7 +282,6 @@ std::pair<float, float> Game::calculateFinalScores() const {
     float finalWhiteScore = static_cast<float>(whiteTerritory + board.whiteCapture) + Komi;
 
 	// std::cerr << "Final territory Calculated: Black = " << blackTerritory << ", White = " << whiteTerritory << std::endl;
-
     return { finalBlackScore, finalWhiteScore };
 }
 
@@ -299,14 +291,12 @@ bool Game::AI_move() {
     std::cerr << "foundBestMove...\n" << std::endl;
 
     if (aiMove.row != -1 && placeStone(aiMove.row, aiMove.col, aiMove.player)) {
-        // Giả lập độ trễ cho AI
-        
         if (currentDifficulty == Difficulty::Easy) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Độ trễ 500ms
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		}
 
         if (currentDifficulty == Difficulty::Medium) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Độ trễ 500ms
+            std::this_thread::sleep_for(std::chrono::milliseconds(100)); 
         }
 
 		return true;

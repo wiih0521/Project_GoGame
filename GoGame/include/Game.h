@@ -2,15 +2,14 @@
 #define GAME_H
 
 #include <SFML/Graphics.hpp>
-#include <SFML/Audio.hpp> // Thêm cho âm thanh
+#include <SFML/Audio.hpp> 
 #include <stack>
-#include <vector> // Cần thiết cho các trạng thái bàn cờ
-#include <memory> // Cần thiết cho std::unique_ptr
+#include <vector> 
+#include <memory> 
 #include "Board.h"
 #include "AI.h"
 
 enum class GameMode { PlayerVsPlayer, PlayerVsAI };
-// enum class Difficulty { Easy, Medium, Hard }; // Đã định nghĩa trong AI.h, có thể bỏ ở đây nếu chỉ dùng AI.h
 
 class Game {
 public:
