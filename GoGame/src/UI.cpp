@@ -39,7 +39,6 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
     captureSound.setBuffer(captureSoundBuffer);
     // backgroundSound.setBuffer(backgroundSoundBuffer);
 
-    // Cài đặt ban đầu cho các text UI
     turnIndicatorText.setFont(font);
     turnIndicatorText.setCharacterSize(24);
     turnIndicatorText.setFillColor(sf::Color::Black);
@@ -53,19 +52,15 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
         (float)baseWindowY / bgSize.y
     );
 
-    // KHỞI TẠO UI CHO MÀN HÌNH GAME OVER 
-    // Lớp phủ
     gameOverOverlay.setSize(sf::Vector2f((float)baseWindowX, (float)baseWindowY));
     gameOverOverlay.setFillColor(sf::Color(0, 0, 0, 80)); // Màu đen, trong suốt nhẹ
 
-    // Tiêu đề "GAME OVER"
     gameOverTitleText.setFont(font);
     gameOverTitleText.setString("GAME OVER");
     gameOverTitleText.setCharacterSize(70.0f);
     gameOverTitleText.setFillColor(sf::Color::Red);
     gameOverTitleText.setStyle(sf::Text::Bold);
 
-    // Text điểm số
     finalScoresText.setFont(font);
     finalScoresText.setCharacterSize(30.0f);
     finalScoresText.setFillColor(sf::Color::White);
@@ -142,7 +137,7 @@ void UI::draw(sf::RenderWindow& window) {
 
     // window.draw(boardSprite);
 
-    float spacing = CenterboardSprite.getGlobalBounds().width; // Khoảng cách giữa các giao điểm
+    float spacing = CenterboardSprite.getGlobalBounds().width; 
     float offset = 50.0f; // Lề
 
     // std::cerr << CenterboardSprite.getGlobalBounds().width << std::endl;
@@ -208,7 +203,7 @@ void UI::processEvents() {
         case GameState::MainMenu: handleMainMenuEvents(event); break;
         case GameState::Playing: handlePlayingEvents(event); break;
         case GameState::Settings: handleSettingsEvents(event); break;
-        case GameState::DifficultySelect: // Xử lý sự kiện cho menu chọn độ khó
+        case GameState::DifficultySelect: 
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 activateMenuItem(difficultySelectButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y), view));
             }
@@ -217,7 +212,6 @@ void UI::processEvents() {
             }
             break;
 
-        // THÊM MỚI: Xử lý input cho màn hình GameOver
         case GameState::GameOver:
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
                 currentGameState = GameState::MainMenu;
@@ -225,8 +219,8 @@ void UI::processEvents() {
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2i mousePos = { event.mouseButton.x, event.mouseButton.y };
                 if (playAgainButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
-                    game.startNewGame(); // Bắt đầu game mới với cài đặt cũ
-                    currentGameState = GameState::Playing; // Quay lại trạng thái chơi
+                    game.startNewGame();
+                    currentGameState = GameState::Playing; 
                 }
                 if (mainMenuButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
                     currentGameState = GameState::MainMenu;
@@ -243,16 +237,15 @@ void UI::update() {
         updatePlaying();
         break;
 
-    case GameState::DifficultySelect: // Xử lý highlight cho menu chọn độ khó
+    case GameState::DifficultySelect: 
     {
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
         highlightMenuItem(difficultySelectButtons, static_cast<sf::Vector2f>(mousePos));
     }
     break;
 
-    // Highlight cho nút ở màn hình GameOver
     case GameState::GameOver:
-    { // Thêm scope để khai báo biến cục bộ
+    { 
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
         playAgainButton.setFillColor(playAgainButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos)) ? sf::Color::Yellow : sf::Color::White);
         mainMenuButton.setFillColor(mainMenuButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos)) ? sf::Color::Yellow : sf::Color::White);
@@ -282,15 +275,14 @@ void UI::render() {
         renderSettings();
         break;
 
-    case GameState::DifficultySelect: // Vẽ menu chọn độ khó
+    case GameState::DifficultySelect: 
         window.draw(mainmenuBackgroundSprite);
         drawMenu(window, difficultySelectButtons);
         break;
         
     case GameState::GameOver:
-        renderPlaying(); // Vẽ bàn cờ cuối cùng ở nền
-        window.draw(gameOverOverlay); // Vẽ lớp phủ mờ lên trên
-        // Vẽ các text của màn hình kết thúc
+        renderPlaying(); 
+        window.draw(gameOverOverlay);
         window.draw(gameOverTitleText);
         window.draw(finalScoresText);
         window.draw(winnerMessageText);
@@ -302,7 +294,6 @@ void UI::render() {
     window.display();
 }
 
-// Cải tiến hàm này để căn giữa text động
 void UI::updateNotification(const std::string& message) {
     notificationText.setFont(font);
     notificationText.setStyle(sf::Text::Bold);
@@ -316,7 +307,6 @@ void UI::updateNotification(const std::string& message) {
         textRect.top + textRect.height / 2.0f);
 }
 
-// === Xử lý sự kiện cho từng trạng thái ===
 void UI::handleMainMenuEvents(const sf::Event& event) {
     if (event.type == sf::Event::MouseMoved) {
         highlightMenuItem(mainMenuButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseMove.x, event.mouseMove.y), view));
@@ -335,13 +325,13 @@ void UI::handlePlayingEvents(const sf::Event& event) {
         handlePlayerInput(sf::Mouse::getPosition(window));
     }
     if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::S) { saveGame(); } // saveGame đã có updateNotification
-        if (event.key.code == sf::Keyboard::L) { loadGame(); } // loadGame đã có updateNotification
-        if (event.key.code == sf::Keyboard::Z) { undoMove(); } // undoMove đã có updateNotification
-        if (event.key.code == sf::Keyboard::Y) { redoMove(); } // redoMove đã có updateNotification
-        if (event.key.code == sf::Keyboard::R) { startNewGame(game.currentMode, game.currentDifficulty); } // startNewGame đã có
-        if (event.key.code == sf::Keyboard::P) { passTurn(); } // startNewGame đã có
-        if (event.key.code == sf::Keyboard::Escape) { // Trở về menu chính từ game
+        if (event.key.code == sf::Keyboard::S) { saveGame(); }
+        if (event.key.code == sf::Keyboard::L) { loadGame(); } 
+        if (event.key.code == sf::Keyboard::Z) { undoMove(); }
+        if (event.key.code == sf::Keyboard::Y) { redoMove(); } 
+        if (event.key.code == sf::Keyboard::R) { startNewGame(game.currentMode, game.currentDifficulty); } 
+        if (event.key.code == sf::Keyboard::P) { passTurn(); }
+        if (event.key.code == sf::Keyboard::Escape) { 
             currentGameState = GameState::MainMenu;
             updateNotification("Returning to Main Menu.");
         }
@@ -356,7 +346,7 @@ void UI::handleSettingsEvents(const sf::Event& event) {
         activateMenuItem(settingsButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y), view));
     }
     if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-        currentGameState = GameState::MainMenu; // Quay về Main Menu
+        currentGameState = GameState::MainMenu;
         updateNotification("Settings saved.");
     }
 }
@@ -371,7 +361,7 @@ void UI::updatePlaying() {
         turnIndicatorText.setString("");
 	}
 
-    if (!game.isGameOver && game.currentMode == GameMode::PlayerVsAI && game.currentPlayer == Stone::White) { // Giả sử AI luôn là quân trắng
+    if (!game.isGameOver && game.currentMode == GameMode::PlayerVsAI && game.currentPlayer == Stone::White) { 
         if (game.AI_move()) {
             updateNotification("AI has made its move.");
         }
@@ -386,7 +376,7 @@ void UI::updatePlaying() {
 }
 
 void UI::renderMainMenu() {
-	window.draw(mainmenuBackgroundSprite); // Vẽ nền menu | Optional: menuBackground
+	window.draw(mainmenuBackgroundSprite); 
     drawMenu(window, mainMenuButtons);
 }
 
@@ -399,8 +389,7 @@ void UI::renderPlaying() {
 }
 
 void UI::renderSettings() {
-    window.draw(mainmenuBackgroundSprite); // Vẽ nền menu
-    // Có thể vẽ thêm tiêu đề "Settings"
+    window.draw(mainmenuBackgroundSprite);
     sf::Text settingsTitle("Settings", font, 50);
     settingsTitle.setFillColor(sf::Color::White);
     sf::FloatRect textRect = settingsTitle.getLocalBounds();
@@ -411,18 +400,11 @@ void UI::renderSettings() {
     drawMenu(window, settingsButtons);
 }
 
-// === Các hàm hỗ trợ Menu ===
 void UI::setupMainMenu() {
-    // Cấu trúc menu mới
-    // Item: Text, TargetState, TargetMode (nếu có), Difficulty (nếu có)
-    // Lưu ý: TargetMode và Difficulty chỉ quan trọng khi TargetState là Playing hoặc DifficultySelect
-
-    // Load Game sẽ cần logic riêng, tạm thời đặt TargetState là Playing (sẽ xử lý trong activateMenuItem)
-
     const std::vector<std::tuple<std::string, GameState, GameMode>> buttonData = {
-        {"Load Game", GameState::Playing, GameMode::PlayerVsPlayer}, // Mode không quan trọng vì sẽ load từ file
+        {"Load Game", GameState::Playing, GameMode::PlayerVsPlayer}, 
         {"Player vs Player", GameState::Playing, GameMode::PlayerVsPlayer},
-        {"Player vs Computer", GameState::DifficultySelect, GameMode::PlayerVsAI}, // Chuyển sang chọn độ khó
+        {"Player vs Computer", GameState::DifficultySelect, GameMode::PlayerVsAI}, 
         {"Settings", GameState::Settings, GameMode::PlayerVsPlayer},
         {"Exit", GameState::GameOver, GameMode::PlayerVsPlayer}
     };
@@ -443,9 +425,7 @@ void UI::setupMainMenu() {
         item.text = std::get<0>(data);
         item.targetState = std::get<1>(data);
         item.targetMode = std::get<2>(data);
-        // Difficulty mặc định là Easy, sẽ không dùng ở đây
 
-        // ... (Thiết lập Text và Background Rect như cũ) ...
         item.sfText.setFont(font);
         item.sfText.setCharacterSize(static_cast<unsigned int>(CharSize));
         item.sfText.setFillColor(sf::Color::White);
@@ -467,13 +447,12 @@ void UI::setupMainMenu() {
     }
 }
 
-// === THÊM MỚI setupDifficultySelectMenu ===
 void UI::setupDifficultySelectMenu() {
     const std::vector<std::tuple<std::string, Difficulty>> difficultyData = {
         {"Easy Mode", Difficulty::Easy},
         {"Medium Mode", Difficulty::Medium},
         {"Hard Mode", Difficulty::Hard},
-        {"Back", Difficulty::Easy} // Difficulty không quan trọng cho nút Back
+        {"Back", Difficulty::Easy} 
     };
 
     float CharSize = 30.f;
@@ -500,7 +479,6 @@ void UI::setupDifficultySelectMenu() {
             item.targetMode = GameMode::PlayerVsAI;
         }
 
-        // ... (Thiết lập Text và Background Rect tương tự setupMainMenu) ...
         item.sfText.setFont(font);
         item.sfText.setCharacterSize(static_cast<unsigned int>(CharSize));
         item.sfText.setFillColor(sf::Color::White);
@@ -522,16 +500,14 @@ void UI::setupDifficultySelectMenu() {
     }
 }
 
-// === SỬA ĐỔI setupSettingsMenu ===
 void UI::setupSettingsMenu() {
-    float startY = baseWindowY / 2.0f - 50.0f; // Điều chỉnh vị trí bắt đầu
+    float startY = baseWindowY / 2.0f - 50.0f; 
     float spacing = 80.0f;
     float ButtonWidth = 350.f;
     float ButtonHeight = 50.f;
 
     settingsButtons.clear();
 
-    // Helper lambda để tạo nút settings
     auto createButton = [&](const std::string& text, int index) -> MenuItem {
         MenuItem item;
         item.text = text;
@@ -554,64 +530,55 @@ void UI::setupSettingsMenu() {
         return item;
         };
 
-    // Sound Toggle
     MenuItem soundItem = createButton("Sound: " + std::string(isSoundEnabled ? "ON" : "OFF"), 0);
     settingsButtons.push_back(soundItem);
 
-    // Back to Main Menu
     MenuItem backItem = createButton("Back to Main Menu", 1);
     backItem.targetState = GameState::MainMenu;
     settingsButtons.push_back(backItem);
 }
 
-// === SỬA ĐỔI drawMenu ===
 void UI::drawMenu(sf::RenderWindow& window, const std::vector<MenuItem>& menuItems) {
     for (const auto& item : menuItems) {
-        window.draw(item.backgroundRect); // Vẽ khung trước
-        window.draw(item.sfText);         // Vẽ chữ sau
+        window.draw(item.backgroundRect); 
+        window.draw(item.sfText);        
     }
 }
 
-// === SỬA ĐỔI highlightMenuItem ===
 void UI::highlightMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& mousePos) {
     for (auto& item : menuItems) {
-        // Kiểm tra va chạm với backgroundRect thay vì sfText để vùng chọn lớn hơn
         if (item.backgroundRect.getGlobalBounds().contains(mousePos)) {
             item.sfText.setFillColor(sf::Color::Yellow);
-            item.backgroundRect.setOutlineColor(sf::Color::Yellow); // Highlight viền
-            item.backgroundRect.setFillColor(sf::Color(50, 50, 50, 200)); // Làm sáng nền một chút
+            item.backgroundRect.setOutlineColor(sf::Color::Yellow);
+            item.backgroundRect.setFillColor(sf::Color(50, 50, 50, 200)); 
         }
         else {
             item.sfText.setFillColor(sf::Color::White);
             item.backgroundRect.setOutlineColor(sf::Color::White);
-            item.backgroundRect.setFillColor(sf::Color(0, 0, 0, 180)); // Màu gốc
+            item.backgroundRect.setFillColor(sf::Color(0, 0, 0, 180)); 
         }
     }
 }
 
-// === SỬA ĐỔI activateMenuItem ===
 void UI::activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& mousePos) {
     for (size_t i = 0; i < menuItems.size(); ++i) {
-        // Kiểm tra xem chuột có click vào khung hình chữ nhật của nút không
         if (menuItems[i].backgroundRect.getGlobalBounds().contains(mousePos)) {
 
-            // --- XỬ LÝ CHUNG CHO NÚT EXIT ---
             if (menuItems[i].text == "Exit") {
                 window.close();
                 return;
             }
 
-            // --- XỬ LÝ LOGIC TẠI MAIN MENU ---
             if (currentGameState == GameState::MainMenu) {
                 if (menuItems[i].text == "Load Game") {
-                    loadGame(); // Hàm này sẽ tự chuyển state sang Playing nếu load thành công
+                    loadGame(); 
                 }
                 else if (menuItems[i].text == "Player vs Player") {
                     startNewGame(GameMode::PlayerVsPlayer, Difficulty::Easy);
                     currentGameState = GameState::Playing;
                 }
                 else if (menuItems[i].text == "Player vs Computer") {
-                    setupDifficultySelectMenu(); // Tạo menu con chọn độ khó
+                    setupDifficultySelectMenu();
                     currentGameState = GameState::DifficultySelect;
                 }
                 else if (menuItems[i].text == "Settings") {
@@ -619,41 +586,35 @@ void UI::activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& 
                     currentGameState = GameState::Settings;
                 }
             }
-            // --- XỬ LÝ LOGIC TẠI MENU CHỌN ĐỘ KHÓ (DIFFICULTY SELECT) ---
             else if (currentGameState == GameState::DifficultySelect) {
                 if (menuItems[i].text == "Back") {
-                    setupMainMenu(); // Quay lại menu chính
+                    setupMainMenu(); 
                     currentGameState = GameState::MainMenu;
                 }
                 else {
-                    // Các nút Easy/Medium/Hard đã được gán targetDifficulty trong setupDifficultySelectMenu
                     startNewGame(GameMode::PlayerVsAI, menuItems[i].targetDifficulty);
                     currentGameState = GameState::Playing;
                 }
             }
-            // --- XỬ LÝ LOGIC TẠI MENU SETTINGS ---
             else if (currentGameState == GameState::Settings) {
-                // Kiểm tra nút Sound (bắt đầu bằng chuỗi "Sound:")
                 if (menuItems[i].text.rfind("Sound:", 0) == 0) {
                     toggleSound();
 
-                    // Cập nhật văn bản trên nút ngay lập tức
                     menuItems[i].text = "Sound: " + std::string(isSoundEnabled ? "ON" : "OFF");
                     menuItems[i].sfText.setString(menuItems[i].text);
 
-                    // Căn giữa lại văn bản vì độ dài chuỗi có thể thay đổi
                     sf::FloatRect textRect = menuItems[i].sfText.getLocalBounds();
                     menuItems[i].sfText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
                     menuItems[i].sfText.setPosition(menuItems[i].backgroundRect.getPosition());
                 }
-                // Kiểm tra nút Back (dựa trên targetState đã gán)
+
                 else if (menuItems[i].targetState == GameState::MainMenu) {
                     setupMainMenu();
                     currentGameState = GameState::MainMenu;
                 }
             }
 
-            break; // Đã xử lý xong sự kiện click cho nút này, thoát vòng lặp
+            break; 
         }
     }
 }
@@ -753,7 +714,6 @@ void UI::handleEndGame() {
         winnerStr = "IT'S A DRAW!";
     }
 
-    // Cập nhật nội dung cho các Text object
     std::stringstream ss;
     ss << std::fixed << std::setprecision(1);
     ss << "Black Score: " << blackScore << "\n"
@@ -761,10 +721,7 @@ void UI::handleEndGame() {
     finalScoresText.setString(ss.str());
     winnerMessageText.setString(winnerStr);
 
-    // Căn giữa và định vị các text trên màn hình
     float centerX = baseWindowX / 2.0f;
-
-    // Hàm trợ giúp để căn giữa text
     auto centerText = [&](sf::Text& text) {
         sf::FloatRect bounds = text.getLocalBounds();
         text.setOrigin(bounds.left + bounds.width / 2.0f - (totalBoardPixelSize - LeftborderSize) / 2, bounds.top + bounds.height / 2.0f);
@@ -808,11 +765,11 @@ void UI::toggleSound() {
 	}
 
     updateNotification("Sound " + (isSoundEnabled ? std::string("ON") : std::string("OFF")));
-    setupSettingsMenu(); // Gọi lại để cập nhật text và vị trí của nút Sound
+    setupSettingsMenu(); 
 }
 
 void UI::playMusic() {
-    backgroundSound.setLoop(true); // Lặp lại liên tục
+    backgroundSound.setLoop(true); 
     backgroundSound.play();
 }
 
@@ -822,7 +779,6 @@ void UI::stopMusic() {
 
 void UI::resizeView(const sf::RenderWindow& window, sf::View& view) {
     // Tỷ lệ khung hình logic (Base resolution)
-    // Giả sử baseWindowX/Y là kích thước thiết kế (ví dụ 1920x1080)
     float targetAspectRatio = (float)baseWindowX / (float)baseWindowY;
 
     sf::Vector2u size = window.getSize();

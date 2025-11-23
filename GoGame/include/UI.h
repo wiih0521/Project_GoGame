@@ -2,28 +2,26 @@
 #define UI_H
 
 #include <SFML/Graphics.hpp>
-#include <SFML/Audio.hpp> // Thêm cho âm thanh
+#include <SFML/Audio.hpp> 
 #include <stack>
-#include <vector> // Cần thiết cho các trạng thái bàn cờ
-#include <memory> // Cần thiết cho std::unique_ptr
+#include <vector>
+#include <memory> 
 #include "Board.h"
 #include "Game.h"
 #include "AI.h"
 
-// Định nghĩa các trạng thái của gamezzz
 enum class GameState {
     MainMenu,
-    DifficultySelect, // THÊM MỚI: Trạng thái chọn độ khó
+    DifficultySelect, 
     Playing,
     Settings,
     GameOver
 };
 
-// Để hiển thị các mục menu
 struct MenuItem {
     std::string text;
     sf::Text sfText;
-    sf::RectangleShape backgroundRect; // THÊM MỚI: Khung nền cho mục menu
+    sf::RectangleShape backgroundRect; 
 
     GameState targetState;
     GameMode targetMode;
@@ -31,8 +29,7 @@ struct MenuItem {
     bool isSelected;
 
     MenuItem() : text(""), targetState(GameState::MainMenu), targetMode(GameMode::PlayerVsPlayer), targetDifficulty(Difficulty::Easy), isSelected(false) {
-        // Khởi tạo mặc định cho backgroundRect
-        backgroundRect.setFillColor(sf::Color(0, 0, 0, 150)); // Màu đen bán trong suốt
+        backgroundRect.setFillColor(sf::Color(0, 0, 0, 150)); 
         backgroundRect.setOutlineThickness(2);
         backgroundRect.setOutlineColor(sf::Color::White);
     }
@@ -61,10 +58,9 @@ private:
     void update();
     void render();
 
-    sf::View view; // Camera để xử lý co giãn
+    sf::View view; 
     void resizeView(const sf::RenderWindow& window, sf::View& view); 
 
-    // Các hàm xử lý trạng thái
     void handleMainMenuEvents(const sf::Event& event);
     void handlePlayingEvents(const sf::Event& event);
     void handleSettingsEvents(const sf::Event& event);
@@ -77,7 +73,6 @@ private:
     void renderPlaying();
     void renderSettings();
 
-    // Hàm chung cho việc xử lý input của người chơi (khi đang chơi)
     void handlePlayerInput(const sf::Vector2i& mousePos);
     void startNewGame(GameMode mode, Difficulty diff = Difficulty::Easy);
     bool isWithinBounds(int row, int col) const;
@@ -87,45 +82,40 @@ private:
     void redoMove();
     void passTurn();
     void handleEndGame();
-    void setupDifficultySelectMenu(); // Hàm thiết lập menu chọn độ khó
+    void setupDifficultySelectMenu(); 
     std::pair<float, float> calculateFinalScores() const;
 
-    void toggleSound(); // Hàm bật/tắt âm thanh
+    void toggleSound(); 
     void playMusic();
 	void stopMusic();
     void updateNotification(const std::string& message);
 
-    // Thêm các vector menu item cho menu chọn độ khó
     std::vector<MenuItem> difficultySelectButtons;
 
     sf::RenderWindow window;
     Game game;
     std::unique_ptr<AI> ai;
 
-    // Trạng thái game hiện tại
     GameState currentGameState;
 
-    // UI elements
     sf::Font font;
     sf::Text turnIndicatorText;
     sf::Text notificationText;
     sf::Text EndGameText;
     sf::Text keyblindguideText;
 
-	// Game Over Screen Elements
-    sf::RectangleShape gameOverOverlay; // Lớp phủ mờ
-    sf::Text gameOverTitleText;      // Chữ "GAME OVER"
-    sf::Text finalScoresText;        // Text hiển thị điểm
-    sf::Text winnerMessageText;      // Text thông báo người thắng
-    sf::Text playAgainButton;        // Nút "Chơi lại"
-    sf::Text mainMenuButton;         // Nút "Về Menu chính"
+    sf::RectangleShape gameOverOverlay; 
+    sf::Text gameOverTitleText;     
+    sf::Text finalScoresText;        
+    sf::Text winnerMessageText;     
+    sf::Text playAgainButton;      
+    sf::Text mainMenuButton;        
 
-    // -- Các thành phần mới cho Menu và Settings --
 	sf::Texture mainmenuBackgroundTexture;
 	sf::Sprite mainmenuBackgroundSprite;
     std::vector<MenuItem> mainMenuButtons;
-    std::vector<MenuItem> settingsButtons; // Menu items for settings
-    sf::RectangleShape menuBackground; // Hình nền cho menu
+    std::vector<MenuItem> settingsButtons; 
+    sf::RectangleShape menuBackground; 
 
     // Âm thanh
     sf::SoundBuffer placeSoundBuffer, captureSoundBuffer;
