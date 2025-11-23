@@ -16,14 +16,10 @@ bool Board::isWithinBounds(int row, int col) const {
 
 bool Board::placeStone(int row, int col, Stone player) {
     if (!isWithinBounds(row, col) || grid[row][col] != Stone::None) {
-        return false; // Vị trí không hợp lệ
+        return false; 
     }
     std::vector<std::vector<Stone>> originalGrid = grid;
-    // Tạm thời đặt quân cờ
     grid[row][col] = player;
-
-    // Lưu trạng thái trước khi bắt quân để kiểm tra Ko và tự sát
-    
 
     // Tìm và bắt quân đối phương xung quanh nước đi mới
     Stone opponent = (player == Stone::Black) ? Stone::White : Stone::Black;
@@ -73,18 +69,15 @@ bool Board::placeStone(int row, int col, Stone player) {
     return true;
 }
 
-// Hàm isWithinBounds không đổi
-
-
 // Hàm đếm tự do cho một nhóm quân bằng BFS
 int Board::countLiberties(int startRow, int startCol, Stone player) const {
     if (!isWithinBounds(startRow, startCol) || grid[startRow][startCol] != player) {
-        return 0; // Không phải quân của người chơi hoặc ô trống
+        return 0; 
     }
 
     std::queue<std::pair<int, int>> q;
-    std::set<std::pair<int, int>> visitedGroupStones; // Theo dõi các quân trong nhóm đã thăm
-    std::set<std::pair<int, int>> libertiesSet;       // Theo dõi các tự do đã đếm (để tránh đếm trùng)
+    std::set<std::pair<int, int>> visitedGroupStones;
+    std::set<std::pair<int, int>> libertiesSet;      
 
     q.push({ startRow, startCol });
     visitedGroupStones.insert({ startRow, startCol });
@@ -108,7 +101,6 @@ int Board::countLiberties(int startRow, int startCol, Stone player) const {
                     }
                 }
                 else if (grid[nr][nc] == Stone::None) {
-                    // Nếu là ô trống và chưa được đếm là tự do cho nhóm này
                     if (libertiesSet.find({ nr, nc }) == libertiesSet.end()) {
                         libertiesSet.insert({ nr, nc });
                     }
@@ -116,43 +108,40 @@ int Board::countLiberties(int startRow, int startCol, Stone player) const {
             }
         }
     }
-    return libertiesSet.size(); // Trả về số lượng tự do duy nhất
+    return libertiesSet.size(); 
 }
 
 void Board::printToConsole() const {
     std::cerr << "--- BOARD STATE (" << boardSize << "x" << boardSize << ") ---\n";
-    // In chỉ số cột ở trên cùng để dễ nhìn
+
     std::cerr << "   ";
     for (int c = 0; c < boardSize; ++c) {
-        std::cerr << c % 10 << " "; // In chữ số cuối của cột
+        std::cerr << c % 10 << " "; 
     }
     std::cerr << "\n";
 
     for (int r = 0; r < boardSize; ++r) {
-        // In chỉ số hàng ở đầu mỗi dòng
         std::cerr << r % 10 << " |";
         for (int c = 0; c < boardSize; ++c) {
             switch (grid[r][c]) {
             case Stone::None:
-                std::cerr << " ."; // Dấu chấm cho ô trống
+                std::cerr << " ."; 
                 break;
             case Stone::Black:
-                std::cerr << " X"; // X cho quân Đen
+                std::cerr << " X";
                 break;
             case Stone::White:
-                std::cerr << " O"; // O cho quân Trắng
+                std::cerr << " O"; 
                 break;
             }
         }
-        std::cerr << " |" << std::endl; // Xuống dòng sau mỗi hàng
+        std::cerr << " |" << std::endl; 
     }
     std::cerr << "--------------------------\n\n";
 }
-// Thêm hàm này vào cuối file Board.cpp
 
 void Board::printToConsole(const std::vector<std::vector<Stone>>& boardToPrint, const std::string& title) const {
     std::cerr << "--- " << title << " (" << boardSize << "x" << boardSize << ") ---\n";
-    // In chỉ số cột
     std::cerr << "   ";
     for (int c = 0; c < boardSize; ++c) {
         std::cerr << c % 10 << " ";
@@ -160,10 +149,8 @@ void Board::printToConsole(const std::vector<std::vector<Stone>>& boardToPrint, 
     std::cerr << "\n";
 
     for (int r = 0; r < boardSize; ++r) {
-        // In chỉ số hàng
         std::cerr << r % 10 << " |";
         for (int c = 0; c < boardSize; ++c) {
-            // SỬ DỤNG 'boardToPrint' THAY VÌ 'grid'
             switch (boardToPrint[r][c]) {
             case Stone::None:
                 std::cerr << " .";
@@ -181,15 +168,14 @@ void Board::printToConsole(const std::vector<std::vector<Stone>>& boardToPrint, 
     std::cerr << "-------------------------------------\n\n";
 }
 
-// Hàm loại bỏ một nhóm quân cờ
 int Board::removeGroup(int startRow, int startCol, Stone playerToRemove) {
     if (!isWithinBounds(startRow, startCol) || grid[startRow][startCol] != playerToRemove) {
-        return 0; // Không phải quân cần xóa hoặc ô trống
+        return 0; 
     }
 
     std::queue<std::pair<int, int>> q;
     q.push({ startRow, startCol });
-    grid[startRow][startCol] = Stone::None; // Xóa quân đầu tiên
+    grid[startRow][startCol] = Stone::None;
 
     int dr[] = { -1, 1, 0, 0 };
     int dc[] = { 0, 0, -1, 1 };
@@ -204,7 +190,7 @@ int Board::removeGroup(int startRow, int startCol, Stone playerToRemove) {
             int nc = current.second + dc[i];
 
             if (isWithinBounds(nr, nc) && grid[nr][nc] == playerToRemove) {
-                grid[nr][nc] = Stone::None; // Xóa quân trong nhóm
+                grid[nr][nc] = Stone::None;
                 q.push({ nr, nc });
             }
         }
@@ -219,10 +205,9 @@ std::pair<int, int> Board::calculateScores() const {
 
     for (int r = 0; r < boardSize; ++r) {
         for (int c = 0; c < boardSize; ++c) {
-            // Nếu là ô trống và chưa được thăm, bắt đầu khám phá lãnh thổ
             if (grid[r][c] == Stone::None && !visited[r][c]) {
                 std::queue<std::pair<int, int>> q;
-                std::vector<std::pair<int, int>> territoryPoints; // Lưu các ô trong vùng lãnh thổ hiện tại
+                std::vector<std::pair<int, int>> territoryPoints; 
                 bool touchesBlack = false;
                 bool touchesWhite = false;
 
@@ -234,7 +219,6 @@ std::pair<int, int> Board::calculateScores() const {
                     std::pair<int, int> current = q.front();
                     q.pop();
 
-                    // Kiểm tra 4 hướng xung quanh
                     for (int i = 0; i < 4; ++i) {
                         int nr = current.first + dr[i];
                         int nc = current.second + dc[i];
@@ -264,12 +248,9 @@ std::pair<int, int> Board::calculateScores() const {
         }
     }
 
-    // Theo luật chơi, điểm cuối cùng còn bao gồm cả số quân đã bắt được.
-    // Hiện tại, hàm này chỉ đếm lãnh thổ. Bạn cần cộng thêm số quân đã bắt được trong lớp Game.
     return { blackScore, whiteScore };
 }
 
-// THÊM HÀM NÀY VÀO CUỐI FILE Board.cpp
 const std::vector<std::vector<Stone>>& Board::getLastBoardState() const {
     return lastGrid;
 }
