@@ -1,26 +1,23 @@
 ﻿#ifndef AI_H
 #define AI_H
 
-// --- CÁC INCLUDE CỦA BẠN (GIỮ NGUYÊN) ---
+
 #include "../include/Board.h"
 #include "../include/AI_hard.h" 
 #include <vector>
-#include <utility> // Cho std::pair
+#include <utility>
 
-// Các enum vẫn giữ nguyên
 enum class Difficulty { Easy, Medium, Hard };
 
 class AI {
 public:
     AI(Difficulty level);
 
-    // Hàm public chính để tìm nước đi
     Move findBestMove(const Board& board, Stone player) const;
 
 private:
     Difficulty difficulty;
 
-    // --- CÁC CHIẾN THUẬT ---
     Move findRandomMove(const Board& board, Stone player) const;
     Move findMediumMove(const Board& board, Stone player) const;
     Move findHardMove(const Board& board, Stone player) const;
@@ -28,9 +25,6 @@ private:
     // --- THUẬT TOÁN MINIMAX ---
     int minimax(const Board& board, int depth, bool isMaximizing, Stone aiPlayer, bool usePruning, int alpha, int beta) const;
 
-    // --- CÁC HÀM HELPER QUAN TRỌNG (MẤT LÀ LỖI) ---
-
-    // [FIX LỖI]: Đây là dòng quan trọng nhất bạn đang thiếu
     int getPositionalScore(int r, int c, int boardSize) const;
 
     // Hàm mô phỏng
@@ -45,7 +39,6 @@ private:
     int countTerritory(const Board& board, Stone player) const;
     int countAliveGroups(const Board& board, Stone player) const;
 
-    // Hàm tìm nhóm quân
     void findGroup(const Board& board, int r, int c, Stone player,
         std::vector<std::pair<int, int>>& group,
         std::vector<std::vector<bool>>& visited) const;

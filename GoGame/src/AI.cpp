@@ -9,13 +9,11 @@
 #include <set>
 #include <queue>
 
-// Khởi tạo engine cho random move (chỉ một lần và toàn cục)
 std::random_device rd;
 std::mt19937 g(rd());
 
 AI::AI(Difficulty level) : difficulty(level) {}
 
-// Hàm mô phỏng có kiểm tra luật Ko
 Board AI::placeStoneSimulated(const Board& currentBoard, int row, int col, Stone player) const {
     Board tempBoard = currentBoard;
 
@@ -133,7 +131,6 @@ Move AI::findMediumMove(const Board& board, Stone player) const {
     // Nếu không còn nước đi
     if (validMoves.empty()) return { -1, -1, player };
 
-    // Shuffle để nếu các điểm số bằng nhau, AI sẽ chọn ngẫu nhiên nước khác nhau mỗi lần chơi
     std::shuffle(validMoves.begin(), validMoves.end(), g);
 
     int currentBoardScore = evaluateBoard(board, player);
@@ -142,15 +139,9 @@ Move AI::findMediumMove(const Board& board, Stone player) const {
 
     for (const auto& move : validMoves) {
         Board tempBoard = placeStoneSimulated(board, move.row, move.col, player);
-
-        // Kiểm tra Ko hoặc lặp lại trạng thái
         if (tempBoard.getBoardState() == board.getBoardState()) continue;
 
         int score = evaluateBoard(tempBoard, player);
-
-        // Logic "Atari" cơ bản: Nếu nước đi này khiến địch còn 1 khí -> Ưu tiên cao
-        // Giúp AI biết tấn công hơn
-        /* (Tuỳ chọn: Bạn có thể thêm logic kiểm tra nước đi này có bắt quân ngay lập tức không để bonus thêm) */
 
         if (score > bestScore) {
             bestScore = score;
@@ -158,8 +149,6 @@ Move AI::findMediumMove(const Board& board, Stone player) const {
         }
     }
 
-    // Nếu nước đi tốt nhất còn tệ hơn pass (ví dụ board đã đầy hoặc bất lợi), cân nhắc pass
-    // Tuy nhiên ở Medium, cứ để nó đánh hết quan cũng được.
     return bestMove;
 }
 
@@ -272,13 +261,11 @@ int AI::evaluateBoard(const Board& board, Stone player) const {
     Stone opponent = (player == Stone::Black) ? Stone::White : Stone::Black;
     int score = 0;
 
-    // --- BỘ THAM SỐ MỚI (ĐÃ CÂN CHỈNH) ---
-    const int CAPTURE_WEIGHT = 80;      // Vẫn quan trọng, nhưng giảm bớt để ko quá tham ăn
-    const int TERRITORY_WEIGHT = 15;    // Tăng nhẹ tầm quan trọng của đất
-    const int LIBERTY_WEIGHT = 3;       // MỚI: Khuyến khích nước đi thoáng, nhiều khí
-    const int POSITION_WEIGHT = 1;      // MỚI: Hệ số nhân cho vị trí đẹp
+    const int CAPTURE_WEIGHT = 80;     
+    const int TERRITORY_WEIGHT = 15;    
+    const int LIBERTY_WEIGHT = 3;      
+    const int POSITION_WEIGHT = 1;      
 
-    // 1. Điểm bắt quân (Capture)
     if (player == Stone::Black) {
         score += board.blackCapture * CAPTURE_WEIGHT;
         score -= board.whiteCapture * CAPTURE_WEIGHT;
@@ -287,9 +274,6 @@ int AI::evaluateBoard(const Board& board, Stone player) const {
         score += board.whiteCapture * CAPTURE_WEIGHT;
         score -= board.blackCapture * CAPTURE_WEIGHT;
     }
-
-    // 2. Duyệt qua bàn cờ để tính Lãnh thổ (Territory), Khí (Liberties) và Vị trí (Position)
-    // Lưu ý: Ta bỏ countAliveGroups (2 mắt) vì nó quá tốn kém và làm AI đánh co cụm.
 
     int myLiberties = 0;
     int oppLiberties = 0;
@@ -300,9 +284,7 @@ int AI::evaluateBoard(const Board& board, Stone player) const {
         for (int c = 0; c < board.getSize(); ++c) {
             Stone s = board.getStone(r, c);
             if (s == player) {
-                // Cộng điểm khí
                 myLiberties += board.countLiberties(r, c, player);
-                // Cộng điểm vị trí
                 myPosScore += getPositionalScore(r, c, board.getSize());
             }
             else if (s == opponent) {
@@ -313,13 +295,11 @@ int AI::evaluateBoard(const Board& board, Stone player) const {
     }
 
     score += myLiberties * LIBERTY_WEIGHT;
-    score -= oppLiberties * LIBERTY_WEIGHT; // Trừ điểm nếu địch mạnh
+    score -= oppLiberties * LIBERTY_WEIGHT; 
 
     score += myPosScore * POSITION_WEIGHT;
     score -= oppPosScore * POSITION_WEIGHT;
 
-    // 3. Territory (Lãnh thổ)
-    // Chỉ tính khi đã vây kín (dùng hàm cũ của bạn)
     score += countTerritory(board, player) * TERRITORY_WEIGHT;
     score -= countTerritory(board, opponent) * TERRITORY_WEIGHT;
 
