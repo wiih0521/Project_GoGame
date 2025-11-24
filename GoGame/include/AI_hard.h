@@ -4,26 +4,21 @@
 #include "../include/Board.h"
 #include <string>
 #include <utility>
+#include <stack>
 #include <windows.h> // Thư viện cần thiết để gọi file .exe trên Windows
 
 class AIHard {
 public:
-    // 1. Khởi động Fuego (Gọi hàm này 1 lần khi bắt đầu Game)
-    // path: đường dẫn đến file "fuego.exe"
-    // size: kích thước bàn cờ (9, 13, 19)
     static bool startEngine(std::string path, int size);
-
-    // 2. Đóng Fuego (Gọi khi tắt game)
     static void stopEngine();
 
-    // 3. Hàm chính: Bảo Fuego suy nghĩ và đi
-    static Move getBestMove(Stone playerColor);
-
-    // 4. Quan trọng: Báo cho Fuego biết người chơi vừa đi đâu
-    // (Nếu không báo, Fuego sẽ không biết bàn cờ đã thay đổi)
-    static void reportMove(int row, int col, Stone playerColor);
-
     static void startNewGame();
+    static Move getBestMove(Stone playerColor);
+    static void reportPlayerMove(int row, int col, Stone playerColor);
+    static void makeMove(int row, int col, Stone playerColor);
+
+    static void undo();
+    static void redo();
 
 private:
     static HANDLE g_hChildStd_IN_Wr; // Đường ghi lệnh vào Fuego
@@ -38,6 +33,9 @@ private:
     static std::pair<int, int> stringToCoords(std::string gtpCoord, int boardSize);
 
     static int currentBoardSize;
+
+    static std::stack<Move> moveHistory;
+    static std::stack<Move> redoHistory;
 };
 
 #endif

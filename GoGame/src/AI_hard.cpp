@@ -8,6 +8,8 @@ HANDLE AIHard::g_hChildStd_IN_Wr = NULL;
 HANDLE AIHard::g_hChildStd_OUT_Rd = NULL;
 HANDLE AIHard::g_hChildProcess = NULL;
 int AIHard::currentBoardSize = 19;
+std::stack<Move> AIHard::moveHistory;
+std::stack<Move> AIHard::redoHistory;
 
 // --- PHẦN GIAO TIẾP WINDOWS PIPE (Hơi phức tạp, dùng để nối dây với .exe) ---
 
@@ -55,7 +57,7 @@ bool AIHard::startEngine(std::string path, int size) {
     g_hChildProcess = piProcInfo.hProcess;
     CloseHandle(piProcInfo.hThread);
 
-    std::cout << "--- Dang khoi dong bot ---" << std::endl;
+    std::cerr << "--- Dang khoi dong bot ---" << std::endl;
 
     char buffer[4096];
     DWORD dwRead;
@@ -66,7 +68,7 @@ bool AIHard::startEngine(std::string path, int size) {
         if (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &dwAvail, NULL) && dwAvail > 0) {
             if (ReadFile(g_hChildStd_OUT_Rd, buffer, sizeof(buffer) - 1, &dwRead, NULL) && dwRead > 0) {
                 buffer[dwRead] = '\0';
-                std::cout << buffer; 
+                std::cerr << buffer; 
                 silenceTime = 0; 
             }
         }
@@ -82,11 +84,11 @@ bool AIHard::startEngine(std::string path, int size) {
         }
     }
 
-    std::cout << "\n--- Bot da san sang ---" << std::endl;
+    std::cerr << "\n--- Bot da san sang ---" << std::endl;
     std::string handshake = sendCommand("name");
 
     if (handshake.length() > 0 && handshake[0] == '=') {
-        std::cout << ">>> Ket noi thanh cong! bot da san sang." << std::endl;
+        std::cerr << ">>> Ket noi thanh cong! bot da san sang." << std::endl;
 
         sendCommand("boardsize " + std::to_string(size));
         sendCommand("komi 6.5");
@@ -121,11 +123,11 @@ std::string AIHard::sendCommand(std::string cmd) {
     if (!g_hChildStd_IN_Wr) return "";
 
     std::string cmdToSend = cmd + "\n";
-    std::cout << "[Gui]: " << cmd << std::endl;
+    std::cout << "[Send]: " << cmd << std::endl;
 
     DWORD dwWritten;
     if (!WriteFile(g_hChildStd_IN_Wr, cmdToSend.c_str(), cmdToSend.length(), &dwWritten, NULL)) {
-        std::cerr << "[LOI] Khong ghi duoc vao Pipe." << std::endl;
+        std::cerr << "[Error] Khong ghi duoc vao Pipe." << std::endl;
         return "";
     }
 
@@ -144,7 +146,7 @@ std::string AIHard::sendCommand(std::string cmd) {
 
         DWORD exitCode;
         if (GetExitCodeProcess(g_hChildProcess, &exitCode) && exitCode != STILL_ACTIVE) {
-            std::cerr << "[LOI] Bot process da chet! Exit code: " << exitCode << std::endl;
+            std::cerr << "[Error] Bot process da chet! Exit code: " << exitCode << std::endl;
             break;
         }
 
@@ -176,7 +178,7 @@ std::string AIHard::sendCommand(std::string cmd) {
         }
     }
     
-    std::cout << "[Nhan]: " << output << " --- " << std::endl;
+    std::cout << "[Receive]: " << output << " --- " << "received" << std::endl;
 
 	int inPos = output.find("=");
     if (inPos != std::string::npos) {
@@ -239,7 +241,49 @@ std::pair<int, int> AIHard::stringToCoords(std::string gtpCoord, int boardSize) 
     }
 }
 
-void AIHard::reportMove(int row, int col, Stone playerColor) {
+void AIHard::reportPlayerMove(int row, int col, Stone playerColor) {
+    std::string colorStr = (playerColor == Stone::Black) ? "b" : "w";
+
+    if (row == -1 && col == -1) {
+        std::string cmd = "play " + colorStr + " " + "pass";
+        sendCommand(cmd);
+    }
+    else {
+        std::string coordStr = coordsToString(row, col, currentBoardSize);
+        std::string cmd = "play " + colorStr + " " + coordStr;
+        sendCommand(cmd);
+    }
+
+	moveHistory.push({ row, col, playerColor });
+	while (!redoHistory.empty()) redoHistory.pop();
+}
+
+Move AIHard::getBestMove(Stone playerColor) {
+    std::string colorStr = (playerColor == Stone::Black) ? "b" : "w";
+    std::string cmd = "genmove " + colorStr;
+
+    std::string response = sendCommand(cmd);
+
+    std::pair<int, int> bestMove = stringToCoords(response, currentBoardSize);
+
+	moveHistory.push({ bestMove.first, bestMove.second, playerColor });
+    while (!redoHistory.empty()) redoHistory.pop();
+
+	return { bestMove.first, bestMove.second, playerColor };
+}
+
+void AIHard::undo() {
+    if (moveHistory.size() < 2) return;
+
+    for (int i = 0; i < 2; ++i) {
+        redoHistory.push(moveHistory.top());
+        moveHistory.pop();
+
+        sendCommand("undo");
+    }
+}
+
+void AIHard::makeMove(int row, int col, Stone playerColor) {
     std::string colorStr = (playerColor == Stone::Black) ? "b" : "w";
 
     if (row == -1 && col == -1) {
@@ -253,12 +297,14 @@ void AIHard::reportMove(int row, int col, Stone playerColor) {
     }
 }
 
-Move AIHard::getBestMove(Stone playerColor) {
-    std::string colorStr = (playerColor == Stone::Black) ? "b" : "w";
-    std::string cmd = "genmove " + colorStr;
 
-    std::string response = sendCommand(cmd);
+void AIHard::redo() {
+    if (redoHistory.size() < 2) return;
 
-    std::pair<int, int> bestMove = stringToCoords(response, currentBoardSize);
-	return { bestMove.first, bestMove.second, playerColor };
+    for (int i = 0; i < 2; ++i) {
+        makeMove(redoHistory.top().row, redoHistory.top().col, redoHistory.top().player);
+
+        moveHistory.push(redoHistory.top());
+        redoHistory.pop();
+    }
 }

@@ -102,6 +102,18 @@ bool Game::loadGame() {
                 loadedState[r][c] = static_cast<Stone>(stoneVal);
             }
         }
+
+        if (currentMode == GameMode::PlayerVsAI && currentDifficulty == Difficulty::Hard) {
+            AIHard::startNewGame();
+            for (int r = 0; r < board.getSize(); ++r) {
+                for (int c = 0; c < board.getSize(); ++c) {
+                    if (loadedState[r][c] != Stone::None) {
+                        AIHard::makeMove(r, c, loadedState[r][c]);
+                    }
+                }
+			}
+		}
+
         board.setBoardState(loadedState);
         loadFile.close();
         return true;
@@ -112,6 +124,10 @@ bool Game::loadGame() {
 }
 
 bool Game::undoMove() {
+    if (currentDifficulty == Difficulty::Hard && currentMode == GameMode::PlayerVsAI) {
+        AIHard::undo();
+	}
+
     if (!moveHistory.empty()) {
         if (currentMode == GameMode::PlayerVsAI && currentPlayer == Stone::Black) {
             // Undo hai lần để trở về lượt của người chơi
@@ -159,6 +175,10 @@ bool Game::undoMove() {
 }
 
 bool Game::redoMove() {
+    if (currentDifficulty == Difficulty::Hard && currentMode == GameMode::PlayerVsAI) {
+        AIHard::redo();
+    }
+
     if (!redoHistory.empty()) {
         if (currentMode == GameMode::PlayerVsAI && currentPlayer == Stone::Black) {
             // Redo hai lần để trở về lượt của người chơi
@@ -227,7 +247,7 @@ void Game::passTurn() {
     }
 
     if (currentMode == GameMode::PlayerVsAI && !isGameOver && currentPlayer == Stone::Black && currentDifficulty == Difficulty::Hard) {
-        AIHard::reportMove(-1, -1, Stone::Black);
+        AIHard::reportPlayerMove(-1, -1, Stone::Black);
     }
 
     currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
@@ -254,7 +274,7 @@ bool Game::placeStone(int row, int col, Stone player) {
 
 	if (board.placeStone(row, col, player)) {
         if (currentMode == GameMode::PlayerVsAI && !isGameOver && currentPlayer == Stone::Black && currentDifficulty == Difficulty::Hard) {
-            AIHard::reportMove(row, col, Stone::Black);
+            AIHard::reportPlayerMove(row, col, Stone::Black);
         }
 
         moveHistory.push(board.getBoardState());

@@ -672,14 +672,14 @@ void UI::undoMove() {
     if (game.undoMove()) {
         updateNotification("Undo successful.");
 
-        std::cerr << "Undo" << std::endl;
+        /*std::cerr << "Undo" << std::endl;
         const auto& state = game.board.getBoardState();
         for (int r = 0; r < game.board.getSize(); ++r) {
             for (int c = 0; c < game.board.getSize(); ++c) {
                 std::cerr << static_cast<int>(state[r][c]) << " ";
             }
             std::cerr << "\n";
-        }
+        }*/
     }
     else {
         updateNotification("Cannot undo further.");
