@@ -33,6 +33,8 @@ public:
     void handleEndGame();
     void updateLastGrid();
     std::pair<float, float> calculateFinalScores() const;
+    int getBlackCaptured();
+    int getWhiteCaptured();
 
     Board board;
     bool isGameOver;

@@ -15,7 +15,6 @@ struct Move {
 const int dr[] = { -1, 1, 0, 0 };
 const int dc[] = { 0, 0, -1, 1 };
 
-const float LeftborderSize = 40;
 class Board {
 public:
     Board(const int size = 19);

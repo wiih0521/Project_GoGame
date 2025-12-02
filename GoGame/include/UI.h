@@ -9,6 +9,7 @@
 #include "Board.h"
 #include "Game.h"
 #include "AI.h"
+#include "Theme.h"
 
 enum class GameState {
     MainMenu,
@@ -50,6 +51,7 @@ private:
     const float totalBoardPixelSize = BoardSize * baseCellSize;
 	const int baseWindowY = 1080;
 	const int baseWindowX = 1920;
+    const float LeftborderSize = 40;
 
     float scaleRatio;
     float cellSize;
@@ -117,7 +119,6 @@ private:
     std::vector<MenuItem> settingsButtons; 
     sf::RectangleShape menuBackground; 
 
-    // Âm thanh
     sf::SoundBuffer placeSoundBuffer, captureSoundBuffer;
     sf::Music backgroundSound;
     sf::Sound placeSound, captureSound;
@@ -129,42 +130,22 @@ private:
     void highlightMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& mousePos);
     void activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& mousePos);
 
-	// Textures and Sprites for board and stones
     sf::Texture blackStoneTexture, whiteStoneTexture;
     sf::Sprite blackStoneSprite, whiteStoneSprite;
 
-    sf::Texture BottomboardTexture;
-    sf::Sprite BottomboardSprite;
+    sf::CircleShape starPointShape;
 
-    sf::Texture BottomLeftboardTexture;
-    sf::Sprite BottomLeftboardSprite;
+    BoardTheme currentTheme;
+    ThemeData currentThemeData; 
 
-    sf::Texture BottomRightboardTexture;
-    sf::Sprite BottomRightboardSprite;
+    void updateTheme(BoardTheme newTheme);
 
-    sf::Texture UpperboardTexture;
-    sf::Sprite UpperboardSprite;
+    sf::RectangleShape blackPanel;
+    sf::Text blackPanelText;
 
-    sf::Texture UpperLeftboardTexture;
-    sf::Sprite UpperLeftboardSprite;
-
-    sf::Texture UpperRightboardTexture;
-    sf::Sprite UpperRightboardSprite;
-
-    sf::Texture LeftboardTexture;
-    sf::Sprite LeftboardSprite;
-
-    sf::Texture RightboardTexture;
-    sf::Sprite RightboardSprite;
-
-    sf::Texture CenterboardTexture;
-    sf::Sprite CenterboardSprite;
-
-    sf::Texture SpotTexture;
-    sf::Sprite SpotSprite;
-
-    sf::Texture BackGroundTexture;
-    sf::Sprite BackGroundSprite;
+    sf::RectangleShape whitePanel;
+    sf::Text whitePanelText;
+    void drawScorePanel(sf::RenderWindow& window, sf::RectangleShape& panel, sf::Text& text, bool isActive, bool isBlackStyle);
 };
 
 #endif // UI_H

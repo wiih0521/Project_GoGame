@@ -1,5 +1,6 @@
 ﻿#include "../include/UI.h"
 #include "../include/Board.h"
+#include "../include/Theme.h" // Đảm bảo bạn đã tạo file này như hướng dẫn trước
 
 #include <iostream>
 #include <fstream>
@@ -11,7 +12,7 @@
 #include <thread>
 #include <chrono> 
 
-const sf::Color darkGreen(0, 100, 0);
+const float LeftborderSize = 0.0f;
 
 UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style::Default), currentGameState(GameState::MainMenu), isSoundEnabled(true) {
     ShowWindow(window.getSystemHandle(), SW_MAXIMIZE);
@@ -25,11 +26,10 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
         std::cerr << "Error loading font\n";
     }
 
-    // Tải âm thanh
     if (!placeSoundBuffer.loadFromFile("assets/sounds/clicksound.mp3")) std::cerr << "Error loading place sound\n";
     // if (!captureSoundBuffer.loadFromFile("assets/sounds/capture.wav")) std::cerr << "Error loading capture sound\n";
     if (!backgroundSound.openFromFile("assets/sounds/background.ogg")) std::cerr << "Error loading background sound\n";
-    if (!mainmenuBackgroundTexture.loadFromFile("assets/images/mainmenu_background.png")) std::cerr << "Error loading main menu background image\n";
+    if (!mainmenuBackgroundTexture.loadFromFile("assets/images/background1.png")) std::cerr << "Error loading main menu background image\n";
 
     if (isSoundEnabled) {
         playMusic();
@@ -37,15 +37,13 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
 
     placeSound.setBuffer(placeSoundBuffer);
     captureSound.setBuffer(captureSoundBuffer);
-    // backgroundSound.setBuffer(backgroundSoundBuffer);
 
     turnIndicatorText.setFont(font);
     turnIndicatorText.setCharacterSize(24);
     turnIndicatorText.setFillColor(sf::Color::Black);
     turnIndicatorText.setPosition(baseCellSize, baseWindowY - 50);
 
-    // Main menu
-	mainmenuBackgroundSprite.setTexture(mainmenuBackgroundTexture);
+    mainmenuBackgroundSprite.setTexture(mainmenuBackgroundTexture);
     sf::Vector2u bgSize = mainmenuBackgroundTexture.getSize();
     mainmenuBackgroundSprite.setScale(
         (float)baseWindowX / bgSize.x,
@@ -53,7 +51,7 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
     );
 
     gameOverOverlay.setSize(sf::Vector2f((float)baseWindowX, (float)baseWindowY));
-    gameOverOverlay.setFillColor(sf::Color(0, 0, 0, 80)); // Màu đen, trong suốt nhẹ
+    gameOverOverlay.setFillColor(sf::Color(0, 0, 0, 80));
 
     gameOverTitleText.setFont(font);
     gameOverTitleText.setString("GAME OVER");
@@ -65,105 +63,137 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
     finalScoresText.setCharacterSize(30.0f);
     finalScoresText.setFillColor(sf::Color::White);
 
-    // Text người thắng
     winnerMessageText.setFont(font);
     winnerMessageText.setCharacterSize(45.0f);
     winnerMessageText.setFillColor(sf::Color::Yellow);
     winnerMessageText.setStyle(sf::Text::Bold);
 
-    // Nút "Chơi lại"
     playAgainButton.setFont(font);
     playAgainButton.setString("Play Again");
     playAgainButton.setCharacterSize(40.0f);
     playAgainButton.setFillColor(sf::Color::White);
 
-    // Nút "Về Menu chính"
     mainMenuButton.setFont(font);
     mainMenuButton.setString("Back to Main Menu");
     mainMenuButton.setCharacterSize(40.0f);
     mainMenuButton.setFillColor(sf::Color::White);
-    // =======================================================
 
-    // Setup menu
+    updateTheme(BoardTheme::Classic);
+
     setupMainMenu();
-    setupSettingsMenu(); // Khởi tạo lần đầu
+    setupSettingsMenu();
 
-    // Khởi tạo nền menu (có thể thay bằng hình ảnh)
     menuBackground.setSize(sf::Vector2f(window.getSize()));
-    menuBackground.setFillColor(sf::Color(50, 50, 50, 180)); // Nền mờ
+    menuBackground.setFillColor(sf::Color(50, 50, 50, 180));
     menuBackground.setSize(sf::Vector2f((float)baseWindowX, (float)baseWindowY));
-
-    // Tải assets - bạn cần đảm bảo các tệp này tồn tại
-    if (!BottomboardTexture.loadFromFile("assets/images/b.png")) std::cerr << "Error loading board texture\n";
-    if (!BottomLeftboardTexture.loadFromFile("assets/images/bl.png")) std::cerr << "Error loading board texture\n";
-    if (!BottomRightboardTexture.loadFromFile("assets/images/br.png")) std::cerr << "Error loading board texture\n";
-    if (!UpperboardTexture.loadFromFile("assets/images/u.png")) std::cerr << "Error loading board texture\n";
-    if (!UpperLeftboardTexture.loadFromFile("assets/images/ul.png")) std::cerr << "Error loading board texture\n";
-    if (!UpperRightboardTexture.loadFromFile("assets/images/ur.png")) std::cerr << "Error loading board texture\n";
-    if (!LeftboardTexture.loadFromFile("assets/images/l.png")) std::cerr << "Error loading board texture\n";
-    if (!RightboardTexture.loadFromFile("assets/images/r.png")) std::cerr << "Error loading board texture\n";
-    if (!CenterboardTexture.loadFromFile("assets/images/c.png")) std::cerr << "Error loading board texture\n";
-    if (!BackGroundTexture.loadFromFile("assets/images/background.png")) std::cerr << "Error loading board texture\n";
-    if (!SpotTexture.loadFromFile("assets/images/spot.png")) std::cerr << "Error loading board texture\n";
 
     if (!blackStoneTexture.loadFromFile("assets/images/black_stone.png")) std::cerr << "Error loading black stone texture\n";
     if (!whiteStoneTexture.loadFromFile("assets/images/white_stone.png")) std::cerr << "Error loading white stone texture\n";
 
-    BottomboardSprite.setTexture(BottomboardTexture);
-    BottomLeftboardSprite.setTexture(BottomLeftboardTexture);
-    BottomRightboardSprite.setTexture(BottomRightboardTexture);
-    UpperboardSprite.setTexture(UpperboardTexture);
-    UpperLeftboardSprite.setTexture(UpperLeftboardTexture);
-    UpperRightboardSprite.setTexture(UpperRightboardTexture);
-    LeftboardSprite.setTexture(LeftboardTexture);
-    RightboardSprite.setTexture(RightboardTexture);
-    CenterboardSprite.setTexture(CenterboardTexture);
-    SpotSprite.setTexture(SpotTexture);
-    BackGroundSprite.setTexture(BackGroundTexture);
-
-    // smooth
     blackStoneTexture.setSmooth(true);
     whiteStoneTexture.setSmooth(true);
 
     blackStoneSprite.setTexture(blackStoneTexture);
     whiteStoneSprite.setTexture(whiteStoneTexture);
+
+    float panelWidth = 750.0f;
+    float panelHeight = 150.0f;
+    float panelX = baseWindowX - panelWidth - 50.0f; // Cách lề phải 100px
+    float panelY_Black = 200.0f; // Vị trí Y của bảng Đen
+    float panelY_White = 400.0f; // Vị trí Y của bảng Trắng
+
+    // 1. Cấu hình Panel Đen
+    blackPanel.setSize(sf::Vector2f(panelWidth, panelHeight));
+    blackPanel.setPosition(panelX, panelY_Black);
+    // Style: Nền đen, Viền trắng (để nổi trên background tối)
+    blackPanel.setFillColor(sf::Color(30, 30, 30));
+    blackPanel.setOutlineThickness(3.0f);
+    blackPanel.setOutlineColor(sf::Color::White);
+
+    blackPanelText.setFont(font);
+    blackPanelText.setCharacterSize(24);
+    blackPanelText.setFillColor(sf::Color::White); // Chữ trắng
+
+    // 2. Cấu hình Panel Trắng
+    whitePanel.setSize(sf::Vector2f(panelWidth, panelHeight));
+    whitePanel.setPosition(panelX, panelY_White);
+    // Style: Nền trắng, Viền đen
+    whitePanel.setFillColor(sf::Color(240, 240, 240));
+    whitePanel.setOutlineThickness(3.0f);
+    whitePanel.setOutlineColor(sf::Color::Black);
+
+    whitePanelText.setFont(font);
+    whitePanelText.setCharacterSize(24);
+    whitePanelText.setFillColor(sf::Color::Black); // Chữ đen
+}
+
+void UI::updateTheme(BoardTheme newTheme) {
+    currentTheme = newTheme;
+    currentThemeData = ThemeManager::getThemeData(newTheme);
 }
 
 void UI::draw(sf::RenderWindow& window) {
     window.draw(mainmenuBackgroundSprite);
 
-    Board &board = game.board;
-	const int boardSize = board.getSize();
+    Board& board = game.board;
+    const int boardSize = board.getSize();
 
-    // window.draw(boardSprite);
+    sf::Color boardColor = currentThemeData.boardColor;
+    sf::Color borderColor = currentThemeData.borderColor;
+    sf::Color lineColor = currentThemeData.lineColor;
+    sf::Color starColor = currentThemeData.starColor;
+    float lineThickness = currentThemeData.lineThickness;
+    float starRadius = currentThemeData.starRadius;
 
-    float spacing = CenterboardSprite.getGlobalBounds().width; 
-    float offset = 50.0f; // Lề
+    float spacing = (float)baseCellSize;
+    float offset = 50.0f;
 
-    // std::cerr << CenterboardSprite.getGlobalBounds().width << std::endl;
+    float startX = offset + LeftborderSize;
+    float startY = offset + LeftborderSize;
 
-    for (int r = 0; r < boardSize; ++r) {
-        for (int c = 0; c < boardSize; ++c) {
-            sf::Sprite* partSprite = nullptr;
-            if (r == 0 && c == 0) partSprite = &UpperLeftboardSprite;
-            else if (r == 0 && c == boardSize - 1) partSprite = &UpperRightboardSprite;
-            else if (r == boardSize - 1 && c == 0) partSprite = &BottomLeftboardSprite;
-            else if (r == boardSize - 1 && c == boardSize - 1) partSprite = &BottomRightboardSprite;
-            else if (r == 0) partSprite = &UpperboardSprite;
-            else if (r == boardSize - 1) partSprite = &BottomboardSprite;
-            else if (c == 0) partSprite = &LeftboardSprite;
-            else if (c == boardSize - 1) partSprite = &RightboardSprite;
-            else if ((boardSize == 19 && ((r == 3 || r == 9 || r == 15) && (c == 3 || c == 9 || c == 15))) ||
-                     (boardSize == 13 && ((r == 3 || r == 6 || r == 9) && (c == 3 || c == 6 || c == 9))) ||
-                     (boardSize == 9 && ((r == 2 || r == 4 || r == 6) && (c == 2 || c == 4 || c == 6)))) {
-                partSprite = &SpotSprite;
-			}
-            else partSprite = &CenterboardSprite;
-            if (partSprite) {
-                partSprite->setPosition(c * spacing + offset - (*partSprite).getGlobalBounds().width / 2 + LeftborderSize,
-                    r * spacing + offset - (*partSprite).getGlobalBounds().height / 2 + LeftborderSize);
-                window.draw(*partSprite);
-            }
+    float gridLength = (boardSize - 1) * spacing;
+    float boardMargin = spacing / 2.0f;
+    sf::RectangleShape boardArea(sf::Vector2f(gridLength + spacing, gridLength + spacing));
+    boardArea.setPosition(startX - boardMargin, startY - boardMargin);
+
+    boardArea.setFillColor(boardColor);
+    boardArea.setOutlineThickness(4.0f);
+    boardArea.setOutlineColor(borderColor);
+
+    sf::RectangleShape shadow = boardArea;
+    shadow.move(10.0f, 10.0f);
+    shadow.setFillColor(sf::Color(0, 0, 0, 80));
+    window.draw(shadow);
+
+    window.draw(boardArea);
+
+    for (int i = 0; i < boardSize; ++i) {
+        sf::RectangleShape hLine(sf::Vector2f(gridLength + lineThickness, lineThickness));
+        hLine.setOrigin(lineThickness / 2, lineThickness / 2);
+        hLine.setPosition(startX, startY + i * spacing);
+        hLine.setFillColor(lineColor);
+        window.draw(hLine);
+
+        sf::RectangleShape vLine(sf::Vector2f(lineThickness, gridLength + lineThickness));
+        vLine.setOrigin(lineThickness / 2, lineThickness / 2);
+        vLine.setPosition(startX + i * spacing, startY);
+        vLine.setFillColor(lineColor);
+        window.draw(vLine);
+    }
+
+    sf::CircleShape starPoint(starRadius);
+    starPoint.setOrigin(starRadius, starRadius);
+    starPoint.setFillColor(starColor);
+
+    std::vector<int> starCoords;
+    if (boardSize == 19) starCoords = { 3, 9, 15 };
+    else if (boardSize == 13) starCoords = { 3, 6, 9 };
+    else if (boardSize == 9) starCoords = { 2, 4, 6 };
+
+    for (int r : starCoords) {
+        for (int c : starCoords) {
+            starPoint.setPosition(startX + c * spacing, startY + r * spacing);
+            window.draw(starPoint);
         }
     }
 
@@ -171,8 +201,11 @@ void UI::draw(sf::RenderWindow& window) {
         for (int c = 0; c < boardSize; ++c) {
             if (board.grid[r][c] != Stone::None) {
                 sf::Sprite& stoneSprite = (board.grid[r][c] == Stone::Black) ? blackStoneSprite : whiteStoneSprite;
-                stoneSprite.setPosition(c * spacing + offset - stoneSprite.getGlobalBounds().width / 2 + LeftborderSize,
-                    r * spacing + offset - stoneSprite.getGlobalBounds().height / 2 + LeftborderSize);
+
+                stoneSprite.setPosition(
+                    startX + c * spacing - stoneSprite.getGlobalBounds().width / 2,
+                    startY + r * spacing - stoneSprite.getGlobalBounds().height / 2
+                );
                 window.draw(stoneSprite);
             }
         }
@@ -184,7 +217,6 @@ void UI::run() {
         processEvents();
         render();
         update();
-        // render();
     }
 }
 
@@ -203,7 +235,7 @@ void UI::processEvents() {
         case GameState::MainMenu: handleMainMenuEvents(event); break;
         case GameState::Playing: handlePlayingEvents(event); break;
         case GameState::Settings: handleSettingsEvents(event); break;
-        case GameState::DifficultySelect: 
+        case GameState::DifficultySelect:
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 activateMenuItem(difficultySelectButtons, window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y), view));
             }
@@ -220,7 +252,7 @@ void UI::processEvents() {
                 sf::Vector2i mousePos = { event.mouseButton.x, event.mouseButton.y };
                 if (playAgainButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
                     game.startNewGame();
-                    currentGameState = GameState::Playing; 
+                    currentGameState = GameState::Playing;
                 }
                 if (mainMenuButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
                     currentGameState = GameState::MainMenu;
@@ -237,7 +269,7 @@ void UI::update() {
         updatePlaying();
         break;
 
-    case GameState::DifficultySelect: 
+    case GameState::DifficultySelect:
     {
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
         highlightMenuItem(difficultySelectButtons, static_cast<sf::Vector2f>(mousePos));
@@ -245,7 +277,7 @@ void UI::update() {
     break;
 
     case GameState::GameOver:
-    { 
+    {
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
         playAgainButton.setFillColor(playAgainButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos)) ? sf::Color::Yellow : sf::Color::White);
         mainMenuButton.setFillColor(mainMenuButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos)) ? sf::Color::Yellow : sf::Color::White);
@@ -259,7 +291,6 @@ void UI::update() {
 
 void UI::render() {
     window.clear(sf::Color(20, 20, 20));
-
     window.setView(view);
 
     switch (currentGameState) {
@@ -275,13 +306,13 @@ void UI::render() {
         renderSettings();
         break;
 
-    case GameState::DifficultySelect: 
+    case GameState::DifficultySelect:
         window.draw(mainmenuBackgroundSprite);
         drawMenu(window, difficultySelectButtons);
         break;
-        
+
     case GameState::GameOver:
-        renderPlaying(); 
+        renderPlaying();
         window.draw(gameOverOverlay);
         window.draw(gameOverTitleText);
         window.draw(finalScoresText);
@@ -326,12 +357,12 @@ void UI::handlePlayingEvents(const sf::Event& event) {
     }
     if (event.type == sf::Event::KeyPressed) {
         if (event.key.code == sf::Keyboard::S) { saveGame(); }
-        if (event.key.code == sf::Keyboard::L) { loadGame(); } 
-        if (event.key.code == sf::Keyboard::Z) { undoMove(); }
-        if (event.key.code == sf::Keyboard::Y) { redoMove(); } 
-        if (event.key.code == sf::Keyboard::R) { startNewGame(game.currentMode, game.currentDifficulty); } 
+        if (event.key.code == sf::Keyboard::L) { loadGame(); }
+        if (event.key.code == sf::Keyboard::Z) { undoMove(); /*renderPlaying();*/ }
+        if (event.key.code == sf::Keyboard::Y) { redoMove(); /*renderPlaying();*/ }
+        if (event.key.code == sf::Keyboard::R) { startNewGame(game.currentMode, game.currentDifficulty); }
         if (event.key.code == sf::Keyboard::P) { passTurn(); }
-        if (event.key.code == sf::Keyboard::Escape) { 
+        if (event.key.code == sf::Keyboard::Escape) {
             currentGameState = GameState::MainMenu;
             updateNotification("Returning to Main Menu.");
         }
@@ -356,36 +387,43 @@ void UI::updatePlaying() {
         handleEndGame();
     }
 
-    turnIndicatorText.setString(std::string("Turn: ") + (game.currentPlayer == Stone::Black ? "Black" : "White"));
-    if (game.currentMode == GameMode::PlayerVsAI) {
-        turnIndicatorText.setString("");
-	}
+    std::string blackStr = "BLACK\nCaptured: " + std::to_string(game.getBlackCaptured());
+    blackPanelText.setString(blackStr);
 
-    if (!game.isGameOver && game.currentMode == GameMode::PlayerVsAI && game.currentPlayer == Stone::White) { 
+    std::string whiteStr = "WHITE\nCaptured: " + std::to_string(game.getWhiteCaptured());
+    whitePanelText.setString(whiteStr);
+
+    if (!game.isGameOver && game.currentMode == GameMode::PlayerVsAI && game.currentPlayer == Stone::White) {
         if (game.AI_move()) {
             updateNotification("AI has made its move.");
         }
         else {
-			updateNotification("AI passed the move.");
+            updateNotification("AI passed the move.");
             if (game.consecutivePasses >= 2) {
                 game.isGameOver = true;
-				handleEndGame();
-			}
+                handleEndGame();
+            }
         }
     }
 }
 
 void UI::renderMainMenu() {
-	window.draw(mainmenuBackgroundSprite); 
+    window.draw(mainmenuBackgroundSprite);
     drawMenu(window, mainMenuButtons);
 }
 
 void UI::renderPlaying() {
-    // window.draw(mainmenuBackgroundSprite);
     draw(window);
-    window.draw(turnIndicatorText); 
-    window.draw(notificationText);
-    window.draw(keyblindguideText);
+    // window.draw(turnIndicatorText);
+    
+    if (currentGameState != GameState::GameOver) {
+        window.draw(notificationText);
+        window.draw(keyblindguideText);
+
+        bool isBlackTurn = (game.currentPlayer == Stone::Black);
+        drawScorePanel(window, blackPanel, blackPanelText, isBlackTurn, true);
+        drawScorePanel(window, whitePanel, whitePanelText, !isBlackTurn, false);
+	}
 }
 
 void UI::renderSettings() {
@@ -402,9 +440,9 @@ void UI::renderSettings() {
 
 void UI::setupMainMenu() {
     const std::vector<std::tuple<std::string, GameState, GameMode>> buttonData = {
-        {"Load Game", GameState::Playing, GameMode::PlayerVsPlayer}, 
+        {"Load Game", GameState::Playing, GameMode::PlayerVsPlayer},
         {"Player vs Player", GameState::Playing, GameMode::PlayerVsPlayer},
-        {"Player vs Computer", GameState::DifficultySelect, GameMode::PlayerVsAI}, 
+        {"Player vs Computer", GameState::DifficultySelect, GameMode::PlayerVsAI},
         {"Settings", GameState::Settings, GameMode::PlayerVsPlayer},
         {"Exit", GameState::GameOver, GameMode::PlayerVsPlayer}
     };
@@ -452,7 +490,7 @@ void UI::setupDifficultySelectMenu() {
         {"Easy Mode", Difficulty::Easy},
         {"Medium Mode", Difficulty::Medium},
         {"Hard Mode", Difficulty::Hard},
-        {"Back", Difficulty::Easy} 
+        {"Back", Difficulty::Easy}
     };
 
     float CharSize = 30.f;
@@ -501,9 +539,9 @@ void UI::setupDifficultySelectMenu() {
 }
 
 void UI::setupSettingsMenu() {
-    float startY = baseWindowY / 2.0f - 50.0f; 
+    float startY = baseWindowY / 2.0f - 100.0f; // Dịch lên một chút
     float spacing = 80.0f;
-    float ButtonWidth = 350.f;
+    float ButtonWidth = 450.f; // Rộng hơn để chứa tên Theme
     float ButtonHeight = 50.f;
 
     settingsButtons.clear();
@@ -530,18 +568,24 @@ void UI::setupSettingsMenu() {
         return item;
         };
 
+    // 1. Sound Button
     MenuItem soundItem = createButton("Sound: " + std::string(isSoundEnabled ? "ON" : "OFF"), 0);
     settingsButtons.push_back(soundItem);
 
-    MenuItem backItem = createButton("Back to Main Menu", 1);
+    // 2. Theme Button (MỚI)
+    MenuItem themeItem = createButton("Theme: " + ThemeManager::getThemeName(currentTheme), 1);
+    settingsButtons.push_back(themeItem);
+
+    // 3. Back Button
+    MenuItem backItem = createButton("Back to Main Menu", 2);
     backItem.targetState = GameState::MainMenu;
     settingsButtons.push_back(backItem);
 }
 
 void UI::drawMenu(sf::RenderWindow& window, const std::vector<MenuItem>& menuItems) {
     for (const auto& item : menuItems) {
-        window.draw(item.backgroundRect); 
-        window.draw(item.sfText);        
+        window.draw(item.backgroundRect);
+        window.draw(item.sfText);
     }
 }
 
@@ -550,12 +594,12 @@ void UI::highlightMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f&
         if (item.backgroundRect.getGlobalBounds().contains(mousePos)) {
             item.sfText.setFillColor(sf::Color::Yellow);
             item.backgroundRect.setOutlineColor(sf::Color::Yellow);
-            item.backgroundRect.setFillColor(sf::Color(50, 50, 50, 200)); 
+            item.backgroundRect.setFillColor(sf::Color(50, 50, 50, 200));
         }
         else {
             item.sfText.setFillColor(sf::Color::White);
             item.backgroundRect.setOutlineColor(sf::Color::White);
-            item.backgroundRect.setFillColor(sf::Color(0, 0, 0, 180)); 
+            item.backgroundRect.setFillColor(sf::Color(0, 0, 0, 180));
         }
     }
 }
@@ -571,7 +615,7 @@ void UI::activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& 
 
             if (currentGameState == GameState::MainMenu) {
                 if (menuItems[i].text == "Load Game") {
-                    loadGame(); 
+                    loadGame();
                 }
                 else if (menuItems[i].text == "Player vs Player") {
                     startNewGame(GameMode::PlayerVsPlayer, Difficulty::Easy);
@@ -588,7 +632,7 @@ void UI::activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& 
             }
             else if (currentGameState == GameState::DifficultySelect) {
                 if (menuItems[i].text == "Back") {
-                    setupMainMenu(); 
+                    setupMainMenu();
                     currentGameState = GameState::MainMenu;
                 }
                 else {
@@ -597,6 +641,7 @@ void UI::activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& 
                 }
             }
             else if (currentGameState == GameState::Settings) {
+                // Handle Sound Toggle
                 if (menuItems[i].text.rfind("Sound:", 0) == 0) {
                     toggleSound();
 
@@ -607,14 +652,26 @@ void UI::activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& 
                     menuItems[i].sfText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
                     menuItems[i].sfText.setPosition(menuItems[i].backgroundRect.getPosition());
                 }
+                // Handle Theme Toggle (MỚI)
+                else if (menuItems[i].text.rfind("Theme:", 0) == 0) {
+                    BoardTheme nextTheme = ThemeManager::getNextTheme(currentTheme);
+                    updateTheme(nextTheme);
 
+                    menuItems[i].text = "Theme: " + ThemeManager::getThemeName(currentTheme);
+                    menuItems[i].sfText.setString(menuItems[i].text);
+
+                    sf::FloatRect textRect = menuItems[i].sfText.getLocalBounds();
+                    menuItems[i].sfText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+                    menuItems[i].sfText.setPosition(menuItems[i].backgroundRect.getPosition());
+                }
+                // Handle Back
                 else if (menuItems[i].targetState == GameState::MainMenu) {
                     setupMainMenu();
                     currentGameState = GameState::MainMenu;
                 }
             }
 
-            break; 
+            break;
         }
     }
 }
@@ -671,15 +728,6 @@ void UI::loadGame() {
 void UI::undoMove() {
     if (game.undoMove()) {
         updateNotification("Undo successful.");
-
-        /*std::cerr << "Undo" << std::endl;
-        const auto& state = game.board.getBoardState();
-        for (int r = 0; r < game.board.getSize(); ++r) {
-            for (int c = 0; c < game.board.getSize(); ++c) {
-                std::cerr << static_cast<int>(state[r][c]) << " ";
-            }
-            std::cerr << "\n";
-        }*/
     }
     else {
         updateNotification("Cannot undo further.");
@@ -696,7 +744,7 @@ void UI::redoMove() {
 }
 
 void UI::handleEndGame() {
-	std::cerr << "Game Over triggered.\n";
+    std::cerr << "Game Over triggered.\n";
     currentGameState = GameState::GameOver;
 
     std::pair<float, float> finalScores = game.calculateFinalScores();
@@ -762,14 +810,14 @@ void UI::toggleSound() {
     }
     else {
         stopMusic();
-	}
+    }
 
     updateNotification("Sound " + (isSoundEnabled ? std::string("ON") : std::string("OFF")));
-    setupSettingsMenu(); 
+    // Không cần gọi setupSettingsMenu() ở đây để tránh reset vị trí nút
 }
 
 void UI::playMusic() {
-    backgroundSound.setLoop(true); 
+    backgroundSound.setLoop(true);
     backgroundSound.play();
 }
 
@@ -778,24 +826,70 @@ void UI::stopMusic() {
 }
 
 void UI::resizeView(const sf::RenderWindow& window, sf::View& view) {
-    // Tỷ lệ khung hình logic (Base resolution)
     float targetAspectRatio = (float)baseWindowX / (float)baseWindowY;
 
     sf::Vector2u size = window.getSize();
     float windowAspectRatio = (float)size.x / (float)size.y;
 
     if (windowAspectRatio >= targetAspectRatio) {
-        // Cửa sổ bè hơn -> Thêm dải đen trái phải
         view.setSize((float)baseWindowX, (float)baseWindowY);
         float viewportWidth = size.y * targetAspectRatio / size.x;
         float viewportLeft = (1.0f - viewportWidth) / 2.0f;
         view.setViewport(sf::FloatRect(viewportLeft, 0.0f, viewportWidth, 1.0f));
     }
     else {
-        // Cửa sổ cao hơn (thường gặp khi Maximize có thanh tiêu đề) -> Thêm dải đen trên dưới
         view.setSize((float)baseWindowX, (float)baseWindowY);
         float viewportHeight = size.x / targetAspectRatio / size.y;
         float viewportTop = (1.0f - viewportHeight) / 2.0f;
         view.setViewport(sf::FloatRect(0.0f, viewportTop, 1.0f, viewportHeight));
     }
+}
+
+void UI::drawScorePanel(sf::RenderWindow& window, sf::RectangleShape& panel, sf::Text& text, bool isActive, bool isBlackStyle) {
+
+    // 1. Vẽ Bóng đổ (Chỉ vẽ nếu đang là lượt chơi - isActive)
+    if (isActive) {
+        sf::RectangleShape shadow = panel;
+        shadow.move(10.0f, 10.0f); // Dịch chuyển xuống dưới phải
+
+        // Màu bóng: Nếu là bảng đen thì bóng sáng (Glow), bảng trắng thì bóng tối
+        if (isBlackStyle) {
+            shadow.setFillColor(sf::Color(255, 255, 255, 100)); // Glow trắng mờ
+        }
+        else {
+            shadow.setFillColor(sf::Color(0, 0, 0, 150)); // Bóng đen
+        }
+
+        // Loại bỏ viền của bóng
+        shadow.setOutlineThickness(0);
+        window.draw(shadow);
+    }
+
+    // 2. Hiệu ứng active (Làm panel to ra một chút hoặc viền sáng hơn)
+    if (isActive) {
+        panel.setOutlineThickness(5.0f); // Viền dày hơn
+        if (isBlackStyle) panel.setOutlineColor(sf::Color::Yellow); // Viền vàng báo hiệu
+        else panel.setOutlineColor(sf::Color::Blue);
+    }
+    else {
+        panel.setOutlineThickness(3.0f); // Viền bình thường
+        if (isBlackStyle) panel.setOutlineColor(sf::Color::White);
+        else panel.setOutlineColor(sf::Color::Black);
+    }
+
+    // 3. Vẽ Panel chính
+    window.draw(panel);
+
+    // 4. Căn giữa Text vào trong Panel
+    sf::FloatRect textRect = text.getLocalBounds();
+    sf::FloatRect panelRect = panel.getGlobalBounds();
+
+    text.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+    text.setPosition(
+        panelRect.left + panelRect.width / 2.0f,
+        panelRect.top + panelRect.height / 2.0f
+    );
+
+    // 5. Vẽ Text
+    window.draw(text);
 }

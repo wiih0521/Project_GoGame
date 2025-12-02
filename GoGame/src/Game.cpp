@@ -332,3 +332,6 @@ void Game::updateLastGrid() {
         board.lastGrid = moveHistory.top();
 	}
 }
+
+int Game::getBlackCaptured() { return board.blackCapture; }
+int Game::getWhiteCaptured() { return board.whiteCapture; }
