@@ -98,26 +98,22 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
 
     float panelWidth = 750.0f;
     float panelHeight = 150.0f;
-    float panelX = baseWindowX - panelWidth - 50.0f; // Cách lề phải 100px
-    float panelY_Black = 200.0f; // Vị trí Y của bảng Đen
-    float panelY_White = 400.0f; // Vị trí Y của bảng Trắng
+    float panelX = baseWindowX - panelWidth - 50.0f; 
+    float panelY_Black = 200.0f;
+    float panelY_White = 400.0f;
 
-    // 1. Cấu hình Panel Đen
     blackPanel.setSize(sf::Vector2f(panelWidth, panelHeight));
     blackPanel.setPosition(panelX, panelY_Black);
-    // Style: Nền đen, Viền trắng (để nổi trên background tối)
     blackPanel.setFillColor(sf::Color(30, 30, 30));
     blackPanel.setOutlineThickness(3.0f);
     blackPanel.setOutlineColor(sf::Color::White);
 
     blackPanelText.setFont(font);
     blackPanelText.setCharacterSize(24);
-    blackPanelText.setFillColor(sf::Color::White); // Chữ trắng
+    blackPanelText.setFillColor(sf::Color::White); 
 
-    // 2. Cấu hình Panel Trắng
     whitePanel.setSize(sf::Vector2f(panelWidth, panelHeight));
     whitePanel.setPosition(panelX, panelY_White);
-    // Style: Nền trắng, Viền đen
     whitePanel.setFillColor(sf::Color(240, 240, 240));
     whitePanel.setOutlineThickness(3.0f);
     whitePanel.setOutlineColor(sf::Color::Black);
@@ -249,12 +245,13 @@ void UI::processEvents() {
                 currentGameState = GameState::MainMenu;
             }
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-                sf::Vector2i mousePos = { event.mouseButton.x, event.mouseButton.y };
-                if (playAgainButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
+                sf::Vector2i mousePixelPos = { event.mouseButton.x, event.mouseButton.y };
+                sf::Vector2f worldPos = window.mapPixelToCoords(mousePixelPos, view);
+                if (playAgainButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(worldPos))) {
                     game.startNewGame();
                     currentGameState = GameState::Playing;
                 }
-                if (mainMenuButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
+                if (mainMenuButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(worldPos))) {
                     currentGameState = GameState::MainMenu;
                 }
             }
@@ -279,8 +276,9 @@ void UI::update() {
     case GameState::GameOver:
     {
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-        playAgainButton.setFillColor(playAgainButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos)) ? sf::Color::Yellow : sf::Color::White);
-        mainMenuButton.setFillColor(mainMenuButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos)) ? sf::Color::Yellow : sf::Color::White);
+        sf::Vector2f worldPos = window.mapPixelToCoords(mousePos, view);
+        playAgainButton.setFillColor(playAgainButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(worldPos)) ? sf::Color::Yellow : sf::Color::White);
+        mainMenuButton.setFillColor(mainMenuButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(worldPos)) ? sf::Color::Yellow : sf::Color::White);
     }
     break;
 
@@ -769,28 +767,29 @@ void UI::handleEndGame() {
     finalScoresText.setString(ss.str());
     winnerMessageText.setString(winnerStr);
 
-    float centerX = baseWindowX / 2.0f;
+    float menuCenterX = baseWindowX * 0.75f;
     auto centerText = [&](sf::Text& text) {
         sf::FloatRect bounds = text.getLocalBounds();
-        text.setOrigin(bounds.left + bounds.width / 2.0f - (totalBoardPixelSize - LeftborderSize) / 2, bounds.top + bounds.height / 2.0f);
+        text.setOrigin(bounds.left + bounds.width / 2.0f, bounds.top + bounds.height / 2.0f);
         };
 
-    gameOverOverlay.setSize(sf::Vector2f((float)baseWindowX, (float)baseWindowY));
+
+    // gameOverOverlay.setSize(sf::Vector2f((float)baseWindowX, (float)baseWindowY));
 
     centerText(gameOverTitleText);
-    gameOverTitleText.setPosition(centerX, 150.0f);
+    gameOverTitleText.setPosition(menuCenterX, 150.0f);
 
     centerText(winnerMessageText);
-    winnerMessageText.setPosition(centerX, 250.0f);
+    winnerMessageText.setPosition(menuCenterX, 250.0f);
 
     centerText(finalScoresText);
-    finalScoresText.setPosition(centerX, 350.0f);
+    finalScoresText.setPosition(menuCenterX, 350.0f);
 
     centerText(playAgainButton);
-    playAgainButton.setPosition(centerX, 500.0f);
+    playAgainButton.setPosition(menuCenterX, 500.0f);
 
     centerText(mainMenuButton);
-    mainMenuButton.setPosition(centerX, 580.0f);
+    mainMenuButton.setPosition(menuCenterX, 580.0f);
 }
 
 void UI::passTurn() {
@@ -813,7 +812,6 @@ void UI::toggleSound() {
     }
 
     updateNotification("Sound " + (isSoundEnabled ? std::string("ON") : std::string("OFF")));
-    // Không cần gọi setupSettingsMenu() ở đây để tránh reset vị trí nút
 }
 
 void UI::playMusic() {
@@ -846,41 +844,34 @@ void UI::resizeView(const sf::RenderWindow& window, sf::View& view) {
 }
 
 void UI::drawScorePanel(sf::RenderWindow& window, sf::RectangleShape& panel, sf::Text& text, bool isActive, bool isBlackStyle) {
-
-    // 1. Vẽ Bóng đổ (Chỉ vẽ nếu đang là lượt chơi - isActive)
     if (isActive) {
         sf::RectangleShape shadow = panel;
-        shadow.move(10.0f, 10.0f); // Dịch chuyển xuống dưới phải
+        shadow.move(10.0f, 10.0f);
 
-        // Màu bóng: Nếu là bảng đen thì bóng sáng (Glow), bảng trắng thì bóng tối
         if (isBlackStyle) {
-            shadow.setFillColor(sf::Color(255, 255, 255, 100)); // Glow trắng mờ
+            shadow.setFillColor(sf::Color(255, 255, 255, 100));
         }
         else {
-            shadow.setFillColor(sf::Color(0, 0, 0, 150)); // Bóng đen
+            shadow.setFillColor(sf::Color(0, 0, 0, 150)); 
         }
 
-        // Loại bỏ viền của bóng
         shadow.setOutlineThickness(0);
         window.draw(shadow);
     }
 
-    // 2. Hiệu ứng active (Làm panel to ra một chút hoặc viền sáng hơn)
     if (isActive) {
-        panel.setOutlineThickness(5.0f); // Viền dày hơn
-        if (isBlackStyle) panel.setOutlineColor(sf::Color::Yellow); // Viền vàng báo hiệu
+        panel.setOutlineThickness(5.0f);
+        if (isBlackStyle) panel.setOutlineColor(sf::Color::Yellow);
         else panel.setOutlineColor(sf::Color::Blue);
     }
     else {
-        panel.setOutlineThickness(3.0f); // Viền bình thường
+        panel.setOutlineThickness(3.0f);
         if (isBlackStyle) panel.setOutlineColor(sf::Color::White);
         else panel.setOutlineColor(sf::Color::Black);
     }
 
-    // 3. Vẽ Panel chính
     window.draw(panel);
 
-    // 4. Căn giữa Text vào trong Panel
     sf::FloatRect textRect = text.getLocalBounds();
     sf::FloatRect panelRect = panel.getGlobalBounds();
 
@@ -890,6 +881,5 @@ void UI::drawScorePanel(sf::RenderWindow& window, sf::RectangleShape& panel, sf:
         panelRect.top + panelRect.height / 2.0f
     );
 
-    // 5. Vẽ Text
     window.draw(text);
 }
