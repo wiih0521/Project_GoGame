@@ -14,6 +14,7 @@
 enum class GameState {
     MainMenu,
     DifficultySelect, 
+	BoardThemeSelect,
     Playing,
     Settings,
     GameOver
@@ -42,7 +43,7 @@ public:
     
     UI();
     void run();
-    void draw(sf::RenderWindow& window);
+    void draw(sf::RenderWindow& window, Board board);
 
 private:
     const int BoardSize = 19;
@@ -146,6 +147,9 @@ private:
     sf::RectangleShape whitePanel;
     sf::Text whitePanelText;
     void drawScorePanel(sf::RenderWindow& window, sf::RectangleShape& panel, sf::Text& text, bool isActive, bool isBlackStyle);
+
+    void loadSettings();
+	void saveSettings();
 };
 
 #endif // UI_H

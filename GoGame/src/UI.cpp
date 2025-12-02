@@ -22,6 +22,8 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
     resizeView(window, view);
     window.setView(view);
 
+    loadSettings();
+
     if (!font.loadFromFile("assets/fonts/arial.ttf")) {
         std::cerr << "Error loading font\n";
     }
@@ -78,8 +80,6 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
     mainMenuButton.setCharacterSize(40.0f);
     mainMenuButton.setFillColor(sf::Color::White);
 
-    updateTheme(BoardTheme::Classic);
-
     setupMainMenu();
     setupSettingsMenu();
 
@@ -120,7 +120,7 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
 
     whitePanelText.setFont(font);
     whitePanelText.setCharacterSize(24);
-    whitePanelText.setFillColor(sf::Color::Black); // Chữ đen
+    whitePanelText.setFillColor(sf::Color::Black);
 }
 
 void UI::updateTheme(BoardTheme newTheme) {
@@ -128,10 +128,8 @@ void UI::updateTheme(BoardTheme newTheme) {
     currentThemeData = ThemeManager::getThemeData(newTheme);
 }
 
-void UI::draw(sf::RenderWindow& window) {
+void UI::draw(sf::RenderWindow& window, Board board) {
     window.draw(mainmenuBackgroundSprite);
-
-    Board& board = game.board;
     const int boardSize = board.getSize();
 
     sf::Color boardColor = currentThemeData.boardColor;
@@ -411,7 +409,7 @@ void UI::renderMainMenu() {
 }
 
 void UI::renderPlaying() {
-    draw(window);
+    draw(window, game.board);
     // window.draw(turnIndicatorText);
     
     if (currentGameState != GameState::GameOver) {
@@ -566,15 +564,12 @@ void UI::setupSettingsMenu() {
         return item;
         };
 
-    // 1. Sound Button
     MenuItem soundItem = createButton("Sound: " + std::string(isSoundEnabled ? "ON" : "OFF"), 0);
     settingsButtons.push_back(soundItem);
 
-    // 2. Theme Button (MỚI)
     MenuItem themeItem = createButton("Theme: " + ThemeManager::getThemeName(currentTheme), 1);
     settingsButtons.push_back(themeItem);
 
-    // 3. Back Button
     MenuItem backItem = createButton("Back to Main Menu", 2);
     backItem.targetState = GameState::MainMenu;
     settingsButtons.push_back(backItem);
@@ -639,7 +634,6 @@ void UI::activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& 
                 }
             }
             else if (currentGameState == GameState::Settings) {
-                // Handle Sound Toggle
                 if (menuItems[i].text.rfind("Sound:", 0) == 0) {
                     toggleSound();
 
@@ -650,7 +644,6 @@ void UI::activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& 
                     menuItems[i].sfText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
                     menuItems[i].sfText.setPosition(menuItems[i].backgroundRect.getPosition());
                 }
-                // Handle Theme Toggle (MỚI)
                 else if (menuItems[i].text.rfind("Theme:", 0) == 0) {
                     BoardTheme nextTheme = ThemeManager::getNextTheme(currentTheme);
                     updateTheme(nextTheme);
@@ -661,12 +654,14 @@ void UI::activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& 
                     sf::FloatRect textRect = menuItems[i].sfText.getLocalBounds();
                     menuItems[i].sfText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
                     menuItems[i].sfText.setPosition(menuItems[i].backgroundRect.getPosition());
+
+					
                 }
-                // Handle Back
                 else if (menuItems[i].targetState == GameState::MainMenu) {
                     setupMainMenu();
                     currentGameState = GameState::MainMenu;
                 }
+                saveSettings();
             }
 
             break;
@@ -882,4 +877,34 @@ void UI::drawScorePanel(sf::RenderWindow& window, sf::RectangleShape& panel, sf:
     );
 
     window.draw(text);
+}
+
+void UI::loadSettings() {
+    std::ifstream loadFile("settings.txt");
+    if (loadFile.is_open()) {
+        loadFile >> isSoundEnabled;
+		int themeInt;
+        loadFile >> themeInt;
+        currentTheme = static_cast<BoardTheme>(themeInt);
+        updateTheme(currentTheme);
+		loadFile.close();
+    }
+    else {
+		isSoundEnabled = true;
+        currentTheme = BoardTheme::Classic;
+        updateTheme(currentTheme);
+		std::cerr << "No settings file found. Using default settings.\n";
+    }
+}
+
+void UI::saveSettings() {
+	std::ofstream saveFile("settings.txt");
+    if (saveFile.is_open()) {
+        saveFile << isSoundEnabled << "\n";
+        saveFile << static_cast<int>(currentTheme) << "\n";
+        saveFile.close();
+    }
+    else {
+        std::cerr << "Failed to save settings.\n";
+	}
 }
