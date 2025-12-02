@@ -46,8 +46,8 @@ public:
     Stone currentPlayer;
     
     // Stacks for Undo/Redo
-    std::stack<std::vector<std::vector<Stone>>> moveHistory;
-    std::stack<std::vector<std::vector<Stone>>> redoHistory;
+    std::stack<std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>>> moveHistory;
+    std::stack<std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>>> redoHistory;
 
     int consecutivePasses;
 };

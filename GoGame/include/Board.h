@@ -3,6 +3,7 @@
 #define BOARD_H
 
 #include <vector>
+#include <utility>
 #include <SFML/Graphics.hpp>
 
 enum class Stone { None, Black, White };
@@ -23,8 +24,8 @@ public:
     Stone getStone(int row, int col) const;
     int getSize() const;
     void reset();
-    void setBoardState(const std::vector<std::vector<Stone>>& state);
-    const std::vector<std::vector<Stone>>& getBoardState() const;
+    void setBoardState(const std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>> &state);
+    const std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>> getBoardState() const;
     bool isWithinBounds(int row, int col) const;
     int boardSize;
     int whiteCapture, blackCapture;

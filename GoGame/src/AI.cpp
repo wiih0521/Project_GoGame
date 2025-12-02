@@ -47,7 +47,7 @@ Board AI::placeStoneSimulated(const Board& currentBoard, int row, int col, Stone
         return currentBoard;
     }
 
-    if (tempBoard.getBoardState() == lastStateFromOriginalBoard) {
+    if (tempBoard.getBoardState().first == lastStateFromOriginalBoard) {
         return currentBoard;
     }
 

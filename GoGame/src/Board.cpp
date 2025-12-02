@@ -21,11 +21,9 @@ bool Board::placeStone(int row, int col, Stone player) {
     std::vector<std::vector<Stone>> originalGrid = grid;
     grid[row][col] = player;
 
-    // Tìm và bắt quân đối phương xung quanh nước đi mới
     Stone opponent = (player == Stone::Black) ? Stone::White : Stone::Black;
-    bool capturedAny = false; // Cờ báo hiệu có quân nào bị bắt không
+    bool capturedAny = false; 
 
-    // Kiểm tra các ô xung quanh nước đi vừa rồi
     int dr[] = { -1, 1, 0, 0 };
     int dc[] = { 0, 0, -1, 1 };
     int numCapture = 0;
@@ -33,7 +31,6 @@ bool Board::placeStone(int row, int col, Stone player) {
         int nr = row + dr[i];
         int nc = col + dc[i];
         if (isWithinBounds(nr, nc) && grid[nr][nc] == opponent) {
-            // Chỉ kiểm tra nếu nhóm quân đối phương còn sống sau nước đi này
             if (countLiberties(nr, nc, opponent) == 0) {
                 numCapture += removeGroup(nr, nc, opponent);
                 capturedAny = true;
@@ -48,22 +45,20 @@ bool Board::placeStone(int row, int col, Stone player) {
     printToConsole(lastGrid, "LAST STATE (KO)");*/
     
     if (!capturedAny && countLiberties(row, col, player) == 0) {
-        grid = originalGrid; // Hoàn tác nước đi
+        grid = originalGrid; 
         return false;
     }
     if(lastGrid == grid) {
         //std::cerr << "KO";
-        grid = originalGrid; // Hoàn tác nước đi
+        grid = originalGrid;
 		//std::cerr << "Reverted to original state due to KO rule violation.\n";
         return false;
 	}
-    lastGrid = originalGrid; // Cập nhật trạng thái trước đó để kiểm tra Ko
+    lastGrid = originalGrid; 
     if (player == Stone::Black) {
-        // Đen đi, bắt quân của Trắng
         blackCapture += numCapture;
     }
     else {
-        // Trắng đi, bắt quân của Đen
         whiteCapture += numCapture;
     }
     return true;
@@ -265,5 +260,5 @@ void Board::reset()
     whiteCapture = 0;
     blackCapture = 0;
 }
-void Board::setBoardState(const std::vector<std::vector<Stone>>& state) { grid = state; }
-const std::vector<std::vector<Stone>>& Board::getBoardState() const { return grid; }
+void Board::setBoardState(const std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>>& state) { grid = state.first; whiteCapture = state.second.first; blackCapture = state.second.second; }
+const std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>> Board::getBoardState() const { return std::make_pair(grid, std::make_pair(whiteCapture, blackCapture)); }

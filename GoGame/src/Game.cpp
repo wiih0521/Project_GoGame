@@ -61,7 +61,7 @@ bool Game::saveGame() {
         saveFile << board.blackCapture << "\n";
         saveFile << board.whiteCapture << "\n";
 
-        const auto& state = board.getBoardState();
+        const auto& state = board.getBoardState().first;
         for (int r = 0; r < board.getSize(); ++r) {
             for (int c = 0; c < board.getSize(); ++c) {
                 saveFile << static_cast<int>(state[r][c]) << " ";
@@ -89,9 +89,6 @@ bool Game::loadGame() {
         float blackCapture, whiteCaptrue;
         loadFile >> blackCapture >> whiteCaptrue;
 
-        board.whiteCapture = whiteCaptrue;
-        board.blackCapture = blackCapture;
-
         currentPlayer = static_cast<Stone>(playerInt);
 
         std::vector<std::vector<Stone>> loadedState(board.getSize(), std::vector<Stone>(board.getSize()));
@@ -114,7 +111,7 @@ bool Game::loadGame() {
 			}
 		}
 
-        board.setBoardState(loadedState);
+        board.setBoardState(std::make_pair(loadedState, std::make_pair(whiteCaptrue, blackCapture)));
         loadFile.close();
         return true;
     }
@@ -329,7 +326,7 @@ bool Game::AI_move() {
 
 void Game::updateLastGrid() {
     if (!moveHistory.empty()) {
-        board.lastGrid = moveHistory.top();
+        board.lastGrid = moveHistory.top().first;
 	}
 }
 
