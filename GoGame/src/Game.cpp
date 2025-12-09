@@ -8,7 +8,7 @@
 #include <thread> 
 #include <chrono> 
 
-Game::Game() : board(19), isGameOver(false), currentMode(GameMode::PlayerVsPlayer), currentDifficulty(Difficulty::Easy), currentPlayer(Stone::Black), consecutivePasses(0) {
+Game::Game() : board(19), isGameOver(false), currentMode(GameMode::PlayerVsPlayer), currentDifficulty(Difficulty::Easy), currentPlayer(Stone::Black) {
     ai = nullptr;
 }
 
@@ -16,7 +16,6 @@ void Game::NewGame() {
     board.reset();
     currentPlayer = Stone::Black;
     isGameOver = false;
-    consecutivePasses = 0;
 
     if (currentMode == GameMode::PlayerVsAI && currentDifficulty == Difficulty::Hard) {
         AIHard::startNewGame();
@@ -129,11 +128,11 @@ bool Game::undoMove() {
         if (currentMode == GameMode::PlayerVsAI && currentPlayer == Stone::Black) {
             // Undo hai lần để trở về lượt của người chơi
             if (moveHistory.size() >= 2) {
-                redoHistory.push(board.getBoardState());
+                redoHistory.push(board);
                 moveHistory.pop();
                 board.setBoardState(moveHistory.top());
 
-                redoHistory.push(board.getBoardState());
+                redoHistory.push(board);
                 moveHistory.pop();
                 if (!moveHistory.empty()) {
                     board.setBoardState(moveHistory.top());
@@ -144,13 +143,13 @@ bool Game::undoMove() {
             }
             else {
                 // Không đủ nước để undo hai lần, chỉ reset bàn cờ
-                redoHistory.push(board.getBoardState());
+                redoHistory.push(board);
                 moveHistory.pop();
                 board.reset();
             }
         }
         else {
-            redoHistory.push(board.getBoardState());
+            redoHistory.push(board);
             moveHistory.pop();
 
             if (!moveHistory.empty()) {
@@ -163,7 +162,6 @@ bool Game::undoMove() {
             currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
         }
         
-		updateLastGrid();
         return true;
     }
     else {
@@ -181,11 +179,11 @@ bool Game::redoMove() {
             // Redo hai lần để trở về lượt của người chơi
             if (redoHistory.size() >= 2) {
                 board.setBoardState(redoHistory.top());
-                moveHistory.push(board.getBoardState());
+                moveHistory.push(board);
                 redoHistory.pop();
 
                 board.setBoardState(redoHistory.top());
-                moveHistory.push(board.getBoardState());
+                moveHistory.push(board);
                 redoHistory.pop();
             }
             else {
@@ -195,7 +193,7 @@ bool Game::redoMove() {
         }
         else {
             board.setBoardState(redoHistory.top());
-            moveHistory.push(board.getBoardState());
+            moveHistory.push(board);
             redoHistory.pop();
 
             currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
@@ -211,7 +209,7 @@ bool Game::redoMove() {
 
 void Game::handleEndGame() {
     std::cerr << "Game Over triggered.\n";
-	std::cerr << "consecutivePasses = " << consecutivePasses << std::endl;
+	std::cerr << "consecutivePasses = " << board.consecutivePasses << std::endl;
     isGameOver = true;
 
     return;
@@ -248,16 +246,16 @@ void Game::passTurn() {
     }
 
     currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
-    consecutivePasses++; 
+    board.consecutivePasses++; 
     std::cerr << "accessed passTurn()\n";
 
-    std::cout << "Turn passed. Consecutive passes: " << consecutivePasses << std::endl;
+    std::cout << "Turn passed. Consecutive passes: " << board.consecutivePasses << std::endl;
 
-    moveHistory.push(board.getBoardState());
+    moveHistory.push(board);
     while (!redoHistory.empty()) redoHistory.pop();
 
     // Nếu cả hai người chơi đều bỏ lượt, kết thúc game
-    if (consecutivePasses == 2) {
+    if (board.consecutivePasses == 2) {
         isGameOver = true;
         handleEndGame();
     }
@@ -274,10 +272,10 @@ bool Game::placeStone(int row, int col, Stone player) {
             AIHard::reportPlayerMove(row, col, Stone::Black);
         }
 
-        moveHistory.push(board.getBoardState());
+        moveHistory.push(board);
         while (!redoHistory.empty()) redoHistory.pop();
         currentPlayer = (currentPlayer == Stone::Black) ? Stone::White : Stone::Black;
-        consecutivePasses = 0; 
+        board.consecutivePasses = 0;
 
         return true;
     }
@@ -324,11 +322,6 @@ bool Game::AI_move() {
     }
 }
 
-void Game::updateLastGrid() {
-    if (!moveHistory.empty()) {
-        board.lastGrid = moveHistory.top().first;
-	}
-}
-
 int Game::getBlackCaptured() { return board.blackCapture; }
 int Game::getWhiteCaptured() { return board.whiteCapture; }
+int Game::consecutivePasses() const { return board.consecutivePasses; }

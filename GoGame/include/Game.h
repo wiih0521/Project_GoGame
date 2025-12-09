@@ -31,10 +31,10 @@ public:
     bool AI_move();
 	bool placeStone(int row, int col, Stone player);
     void handleEndGame();
-    void updateLastGrid();
     std::pair<float, float> calculateFinalScores() const;
     int getBlackCaptured();
     int getWhiteCaptured();
+    int consecutivePasses() const;
 
     Board board;
     bool isGameOver;
@@ -46,10 +46,8 @@ public:
     Stone currentPlayer;
     
     // Stacks for Undo/Redo
-    std::stack<std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>>> moveHistory;
-    std::stack<std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>>> redoHistory;
-
-    int consecutivePasses;
+    std::stack<Board> moveHistory;
+    std::stack<Board> redoHistory;
 };
 
 #endif // GAME_H

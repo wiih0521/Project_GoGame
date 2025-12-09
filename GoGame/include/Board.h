@@ -20,26 +20,31 @@ class Board {
 public:
     Board(const int size = 19);
 
-    bool placeStone(int row, int col, Stone player);
-    Stone getStone(int row, int col) const;
-    int getSize() const;
-    void reset();
-    void setBoardState(const std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>> &state);
-    const std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>> getBoardState() const;
-    bool isWithinBounds(int row, int col) const;
     int boardSize;
     int whiteCapture, blackCapture;
-    void printToConsole() const;
-    void printToConsole(const std::vector<std::vector<Stone>>& boardToPrint, const std::string& title) const;
-    std::pair<int, int> calculateScores() const;
+    int consecutivePasses;
 
     std::vector<std::vector<Stone>> grid;
     std::vector<std::vector<Stone>> lastGrid;
 
+    int getSize() const;
+    Stone getStone(int row, int col) const;
+    bool placeStone(int row, int col, Stone player);
     int countLiberties(int row, int col, Stone player) const;
-
     int removeGroup(int startRow, int startCol, Stone playerToRemove);
+    bool isWithinBounds(int row, int col) const;
+    
+    
+    void reset();
+    std::pair<int, int> calculateScores() const;
+    const std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>> getBoardState() const;
     const std::vector<std::vector<Stone>>& getLastBoardState() const;
+
+    void printToConsole() const;
+    void printToConsole(const std::vector<std::vector<Stone>>& boardToPrint, const std::string& title) const;
+
+    void setBoardState(Board new_state);
+	void setBoardState(const std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>>& state);
 };
 
 #endif // BOARD_H

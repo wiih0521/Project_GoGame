@@ -395,7 +395,7 @@ void UI::updatePlaying() {
         }
         else {
             updateNotification("AI passed the move.");
-            if (game.consecutivePasses >= 2) {
+            if (game.consecutivePasses() >= 2) {
                 game.isGameOver = true;
                 handleEndGame();
             }

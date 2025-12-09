@@ -7,6 +7,7 @@
 Board::Board(int size) : boardSize(size), grid(size, std::vector<Stone>(size, Stone::None)), lastGrid(size, std::vector<Stone>(size, Stone::None)) {
     whiteCapture = 0;
     blackCapture = 0;
+    consecutivePasses = 0;
 }
 
 bool Board::isWithinBounds(int row, int col) const {
@@ -250,15 +251,31 @@ const std::vector<std::vector<Stone>>& Board::getLastBoardState() const {
     return lastGrid;
 }
 
-
 Stone Board::getStone(int row, int col) const { return grid[row][col]; }
 int Board::getSize() const { return boardSize; }
 void Board::reset()
 {
     grid.assign(boardSize, std::vector<Stone>(boardSize, Stone::None));
     lastGrid.assign(boardSize, std::vector<Stone>(boardSize, Stone::None));
+    consecutivePasses = 0;
     whiteCapture = 0;
     blackCapture = 0;
 }
-void Board::setBoardState(const std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>>& state) { grid = state.first; whiteCapture = state.second.first; blackCapture = state.second.second; }
+
 const std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>> Board::getBoardState() const { return std::make_pair(grid, std::make_pair(whiteCapture, blackCapture)); }
+
+void Board::setBoardState(Board new_state) {
+    grid = new_state.grid;
+	lastGrid = new_state.lastGrid;
+    whiteCapture = new_state.whiteCapture;
+    blackCapture = new_state.blackCapture;
+	consecutivePasses = new_state.consecutivePasses;
+}
+
+void Board::setBoardState(const std::pair<std::vector<std::vector<Stone>>, std::pair<int, int>>& state) {
+    grid = state.first;
+    lastGrid.assign(boardSize, std::vector<Stone>(boardSize, Stone::None));
+    whiteCapture = state.second.first;
+    blackCapture = state.second.second;
+    consecutivePasses = 0;
+}
