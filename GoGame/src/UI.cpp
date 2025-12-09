@@ -416,6 +416,8 @@ void UI::renderPlaying() {
         window.draw(notificationText);
         window.draw(keyblindguideText);
 
+		drawGhostStone(window);
+
         bool isBlackTurn = (game.currentPlayer == Stone::Black);
         drawScorePanel(window, blackPanel, blackPanelText, isBlackTurn, true);
         drawScorePanel(window, whitePanel, whitePanelText, !isBlackTurn, false);
@@ -907,4 +909,35 @@ void UI::saveSettings() {
     else {
         std::cerr << "Failed to save settings.\n";
 	}
+}
+
+void UI::drawGhostStone(sf::RenderWindow& window) {
+    if (game.isGameOver || (game.currentMode == GameMode::PlayerVsAI && game.currentPlayer == Stone::White)) return;
+
+    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+    sf::Vector2f worldPos = window.mapPixelToCoords(mousePos, view);
+
+    float spacing = baseCellSize;
+    float offset = 50.0f;
+
+    int col = static_cast<int>((worldPos.x - offset - LeftborderSize + spacing / 2) / spacing);
+    int row = static_cast<int>((worldPos.y - offset - LeftborderSize + spacing / 2) / spacing);
+
+    if (game.board.isWithinBounds(row, col) && game.board.getStone(row, col) == Stone::None) {
+        sf::Sprite ghostSprite = (game.currentPlayer == Stone::Black) ? blackStoneSprite : whiteStoneSprite;
+        ghostSprite.setScale(0.85f, 0.85f);
+
+        sf::Color originalColor = ghostSprite.getColor();
+
+        ghostSprite.setColor(sf::Color(255, 255, 255, 136));
+
+        float drawX = col * spacing + offset - ghostSprite.getGlobalBounds().width / 2 + LeftborderSize;
+        float drawY = row * spacing + offset - ghostSprite.getGlobalBounds().height / 2 + LeftborderSize;
+
+        ghostSprite.setPosition(drawX, drawY);
+
+        window.draw(ghostSprite);
+
+        ghostSprite.setColor(originalColor);
+    }
 }

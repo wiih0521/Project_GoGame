@@ -150,6 +150,8 @@ private:
 
     void loadSettings();
 	void saveSettings();
+
+    void drawGhostStone(sf::RenderWindow& window);
 };
 
 #endif // UI_H
