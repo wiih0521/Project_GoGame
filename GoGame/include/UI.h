@@ -3,13 +3,23 @@
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp> 
-#include <stack>
-#include <vector>
-#include <memory> 
+
 #include "Board.h"
 #include "Game.h"
 #include "AI.h"
 #include "Theme.h"
+
+#include <iostream>
+#include <fstream>
+#include <sstream>   
+#include <iomanip>   
+#include <memory>
+#include <algorithm> 
+#include <tuple>     
+#include <thread>
+#include <chrono> 
+#include <stack>
+#include <vector>
 
 enum class GameState {
     MainMenu,
@@ -48,6 +58,7 @@ public:
 private:
     const int BoardSize = 19;
     const int baseCellSize = 50;
+    const int baseStoneSize = 40;
     const float notificationSize = 20;
     const float totalBoardPixelSize = BoardSize * baseCellSize;
 	const int baseWindowY = 1080;
@@ -131,16 +142,7 @@ private:
     void highlightMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& mousePos);
     void activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& mousePos);
 
-    sf::Texture blackStoneTexture, whiteStoneTexture;
-    sf::Sprite blackStoneSprite, whiteStoneSprite;
-
     sf::CircleShape starPointShape;
-
-    BoardTheme currentTheme;
-    ThemeData currentThemeData; 
-
-    void updateTheme(BoardTheme newTheme);
-
     sf::RectangleShape blackPanel;
     sf::Text blackPanelText;
 
@@ -152,6 +154,18 @@ private:
 	void saveSettings();
 
     void drawGhostStone(sf::RenderWindow& window);
+    void makeRngBoard();
+
+    Board rngBoard;
+    sf::Sprite blackStoneSprite, whiteStoneSprite;
+
+    BoardTheme currentTheme;
+    BoardData currentThemeData;
+    StoneTheme currentStyle;
+    StoneData currentStyleData;
+
+    void updateTheme(BoardTheme newTheme);
+    void updateStyle(StoneTheme newStyle);
 };
 
 #endif // UI_H

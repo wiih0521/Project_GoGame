@@ -1,11 +1,16 @@
 ﻿#ifndef AI_H
 #define AI_H
 
-
-#include "../include/Board.h"
-#include "../include/AI_hard.h" 
+#include "Board.h"
+#include "AI_hard.h" 
 #include <vector>
 #include <utility>
+#include <random>
+#include <algorithm>
+#include <limits>
+#include <iostream>
+#include <set>
+#include <queue>
 
 enum class Difficulty { Easy, Medium, Hard };
 

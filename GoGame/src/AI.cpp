@@ -1,13 +1,4 @@
 ﻿#include "../include/AI.h"
-#include "../include/Board.h"
-#include "../include/AI_hard.h"
-#include <vector>
-#include <random>
-#include <algorithm>
-#include <limits>
-#include <iostream>
-#include <set>
-#include <queue>
 
 std::random_device rd;
 std::mt19937 g(rd());

@@ -1,12 +1,13 @@
 ﻿#include "../include/Theme.h" 
+#include <iostream>
 
 namespace ThemeManager {
 
-    ThemeData getThemeData(BoardTheme theme) {
-        ThemeData data;
+    BoardData getThemeData(BoardTheme theme) {
+        BoardData data;
 
-        data.starRadius = 4.0f;
-        data.lineThickness = 2.0f;
+        data.starRadius = 5.0f;
+        data.lineThickness = 2.5f;
 
         switch (theme) {
         case BoardTheme::Classic:
@@ -56,5 +57,62 @@ namespace ThemeManager {
     BoardTheme getNextTheme(BoardTheme current) {
         int nextIndex = (static_cast<int>(current) + 1) % static_cast<int>(BoardTheme::MAX_COUNT);
         return static_cast<BoardTheme>(nextIndex);
+    }
+
+    StoneData getStoneData(StoneTheme style) {
+        StoneData data;
+        float stoneTargetSize = 40;
+
+        std::string prefix = "assets/images/stones/";
+        std::string bPath, wPath;
+
+        switch (style) {
+        case StoneTheme::Standard:
+            bPath = "black_standard.png";
+            wPath = "white_standard.png";
+            break;
+        case StoneTheme::Realistic:
+            bPath = "black_realistic.png";
+            wPath = "white_realistic.png";
+            break;
+        case StoneTheme::Flat:
+            bPath = "black_flat.png";
+            wPath = "white_flat.png";
+            break;
+        default:
+            bPath = "black_standard.png";
+            wPath = "white_standard.png";
+            break;
+        }
+
+        if (!data.blackStoneTexture.loadFromFile(prefix + bPath)) {
+            std::cerr << "FAILED to load: " << prefix + bPath << "\n";
+        }
+        else {
+            data.blackStoneTexture.setSmooth(true);
+        }
+
+        if (!data.whiteStoneTexture.loadFromFile(prefix + wPath)) {
+            std::cerr << "FAILED to load: " << prefix + wPath << "\n";
+        }
+        else {
+            data.whiteStoneTexture.setSmooth(true);
+        }
+
+		return data;
+    }
+
+    std::string getStoneName(StoneTheme style) {
+        switch (style) {
+		case StoneTheme::Standard: return "Standard";
+        case StoneTheme::Realistic: return "Slate & Shell";
+        case StoneTheme::Flat: return "Minimalist";
+        default: return "Unknown";
+        }
+    }
+
+    StoneTheme getNextStone(StoneTheme current) {
+        int nextIndex = (static_cast<int>(current) + 1) % static_cast<int>(StoneTheme::MAX_COUNT);
+        return static_cast<StoneTheme>(nextIndex);
     }
 }

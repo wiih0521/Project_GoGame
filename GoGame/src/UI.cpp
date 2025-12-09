@@ -1,16 +1,4 @@
 ﻿#include "../include/UI.h"
-#include "../include/Board.h"
-#include "../include/Theme.h" // Đảm bảo bạn đã tạo file này như hướng dẫn trước
-
-#include <iostream>
-#include <fstream>
-#include <sstream>   
-#include <iomanip>   
-#include <memory>
-#include <algorithm> 
-#include <tuple>     
-#include <thread>
-#include <chrono> 
 
 const float LeftborderSize = 0.0f;
 
@@ -22,8 +10,6 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
     resizeView(window, view);
     window.setView(view);
 
-    loadSettings();
-
     if (!font.loadFromFile("assets/fonts/arial.ttf")) {
         std::cerr << "Error loading font\n";
     }
@@ -32,10 +18,6 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
     // if (!captureSoundBuffer.loadFromFile("assets/sounds/capture.wav")) std::cerr << "Error loading capture sound\n";
     if (!backgroundSound.openFromFile("assets/sounds/background.ogg")) std::cerr << "Error loading background sound\n";
     if (!mainmenuBackgroundTexture.loadFromFile("assets/images/background1.png")) std::cerr << "Error loading main menu background image\n";
-
-    if (isSoundEnabled) {
-        playMusic();
-    }
 
     placeSound.setBuffer(placeSoundBuffer);
     captureSound.setBuffer(captureSoundBuffer);
@@ -80,21 +62,12 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
     mainMenuButton.setCharacterSize(40.0f);
     mainMenuButton.setFillColor(sf::Color::White);
 
-    setupMainMenu();
-    setupSettingsMenu();
-
     menuBackground.setSize(sf::Vector2f(window.getSize()));
     menuBackground.setFillColor(sf::Color(50, 50, 50, 180));
     menuBackground.setSize(sf::Vector2f((float)baseWindowX, (float)baseWindowY));
 
-    if (!blackStoneTexture.loadFromFile("assets/images/black_stone.png")) std::cerr << "Error loading black stone texture\n";
-    if (!whiteStoneTexture.loadFromFile("assets/images/white_stone.png")) std::cerr << "Error loading white stone texture\n";
-
-    blackStoneTexture.setSmooth(true);
-    whiteStoneTexture.setSmooth(true);
-
-    blackStoneSprite.setTexture(blackStoneTexture);
-    whiteStoneSprite.setTexture(whiteStoneTexture);
+    setupMainMenu();
+    setupSettingsMenu();
 
     float panelWidth = 750.0f;
     float panelHeight = 150.0f;
@@ -121,11 +94,61 @@ UI::UI() : window(sf::VideoMode(baseWindowX, baseWindowY), "Go Game", sf::Style:
     whitePanelText.setFont(font);
     whitePanelText.setCharacterSize(24);
     whitePanelText.setFillColor(sf::Color::Black);
+
+    makeRngBoard();
+    loadSettings();
+    if (isSoundEnabled) {
+        playMusic();
+    }
 }
 
 void UI::updateTheme(BoardTheme newTheme) {
     currentTheme = newTheme;
     currentThemeData = ThemeManager::getThemeData(newTheme);
+}
+
+void UI::makeRngBoard() {
+	srand(std::chrono::system_clock::now().time_since_epoch().count());
+
+    rngBoard = Board(19);
+    std::vector<Stone> stones = { Stone::None, Stone::Black, Stone::White };
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+    for (int r = 0; r < 19; ++r) {
+        for (int c = 0; c < 19; ++c) {
+			int randResult = std::rand() % 100;
+
+            int randIndex = 0;
+            if (randResult <= 5)
+                randIndex = 1; 
+            else if (randResult <= 10)
+                randIndex = 2; 
+
+            rngBoard.grid[r][c] = stones[randIndex];
+        }
+    }
+}
+
+void UI::updateStyle(StoneTheme newStyle) {
+	currentStyle = newStyle;
+	currentStyleData = ThemeManager::getStoneData(newStyle);
+
+	blackStoneSprite.setTexture(currentStyleData.blackStoneTexture);
+	whiteStoneSprite.setTexture(currentStyleData.whiteStoneTexture);
+
+    float targetSize = (float)baseStoneSize;
+
+    auto setupSprite = [&](sf::Sprite& sprite) {
+        sf::Vector2u texSize = sprite.getTexture()->getSize();
+
+        float scaleX = targetSize / (float)texSize.x;
+        float scaleY = targetSize / (float)texSize.y;
+        sprite.setScale(scaleX, scaleY);
+
+        sprite.setOrigin(0, 0);
+    };
+
+    setupSprite(blackStoneSprite);
+    setupSprite(whiteStoneSprite);
 }
 
 void UI::draw(sf::RenderWindow& window, Board board) {
@@ -425,12 +448,28 @@ void UI::renderPlaying() {
 }
 
 void UI::renderSettings() {
-    window.draw(mainmenuBackgroundSprite);
+    draw(window, rngBoard);
+
+    sf::RectangleShape rightPanel;
+    float panelWidth = baseWindowX * 0.4f; 
+    rightPanel.setSize(sf::Vector2f(panelWidth, (float)baseWindowY));
+    rightPanel.setPosition(baseWindowX - panelWidth, 0);
+    rightPanel.setFillColor(sf::Color(0, 0, 0, 200));
+    rightPanel.setOutlineThickness(2.0f);
+    rightPanel.setOutlineColor(sf::Color::White); 
+
+    window.draw(rightPanel);
+
     sf::Text settingsTitle("Settings", font, 50);
     settingsTitle.setFillColor(sf::Color::White);
+    settingsTitle.setStyle(sf::Text::Bold);
+
     sf::FloatRect textRect = settingsTitle.getLocalBounds();
     settingsTitle.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
-    settingsTitle.setPosition(baseWindowX / 2.0f, 100);
+
+    float menuCenterX = baseWindowX * 0.75f;
+    settingsTitle.setPosition(menuCenterX, 100);
+
     window.draw(settingsTitle);
 
     drawMenu(window, settingsButtons);
@@ -537,10 +576,11 @@ void UI::setupDifficultySelectMenu() {
 }
 
 void UI::setupSettingsMenu() {
-    float startY = baseWindowY / 2.0f - 100.0f; // Dịch lên một chút
+    float startY = baseWindowY / 2.0f - 100.0f;
     float spacing = 80.0f;
-    float ButtonWidth = 450.f; // Rộng hơn để chứa tên Theme
-    float ButtonHeight = 50.f;
+    float ButtonWidth = 450.f;
+    float ButtonHeight = 60.f;
+    float menuCenterX = baseWindowX * 0.75f;
 
     settingsButtons.clear();
 
@@ -548,7 +588,7 @@ void UI::setupSettingsMenu() {
         MenuItem item;
         item.text = text;
         item.sfText.setFont(font);
-        item.sfText.setCharacterSize(30);
+        item.sfText.setCharacterSize(28); 
         item.sfText.setFillColor(sf::Color::White);
         item.sfText.setString(text);
 
@@ -557,8 +597,9 @@ void UI::setupSettingsMenu() {
 
         item.backgroundRect.setSize(sf::Vector2f(ButtonWidth, ButtonHeight));
         item.backgroundRect.setOrigin(ButtonWidth / 2.0f, ButtonHeight / 2.0f);
-        item.backgroundRect.setPosition(baseWindowX / 2.0f, startY + index * spacing);
-        item.backgroundRect.setFillColor(sf::Color(0, 0, 0, 180));
+        item.backgroundRect.setPosition(menuCenterX, startY + index * spacing);
+
+        item.backgroundRect.setFillColor(sf::Color(40, 40, 40, 230)); 
         item.backgroundRect.setOutlineColor(sf::Color::White);
         item.backgroundRect.setOutlineThickness(2.0f);
 
@@ -572,7 +613,10 @@ void UI::setupSettingsMenu() {
     MenuItem themeItem = createButton("Theme: " + ThemeManager::getThemeName(currentTheme), 1);
     settingsButtons.push_back(themeItem);
 
-    MenuItem backItem = createButton("Back to Main Menu", 2);
+    MenuItem stoneItem = createButton("Stone: " + ThemeManager::getStoneName(currentStyle), 2);
+    settingsButtons.push_back(stoneItem);
+
+    MenuItem backItem = createButton("Back to Main Menu", 3);
     backItem.targetState = GameState::MainMenu;
     settingsButtons.push_back(backItem);
 }
@@ -656,9 +700,18 @@ void UI::activateMenuItem(std::vector<MenuItem>& menuItems, const sf::Vector2f& 
                     sf::FloatRect textRect = menuItems[i].sfText.getLocalBounds();
                     menuItems[i].sfText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
                     menuItems[i].sfText.setPosition(menuItems[i].backgroundRect.getPosition());
-
-					
                 }
+                else if (menuItems[i].text.rfind("Stone:", 0) == 0) {
+                    StoneTheme nextStyle = ThemeManager::getNextStone(currentStyle);
+                    updateStyle(nextStyle);
+
+                    menuItems[i].text = "Stone: " + ThemeManager::getStoneName(currentStyle);
+                    menuItems[i].sfText.setString(menuItems[i].text);
+
+                    sf::FloatRect textRect = menuItems[i].sfText.getLocalBounds();
+                    menuItems[i].sfText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+                    menuItems[i].sfText.setPosition(menuItems[i].backgroundRect.getPosition());
+				}
                 else if (menuItems[i].targetState == GameState::MainMenu) {
                     setupMainMenu();
                     currentGameState = GameState::MainMenu;
@@ -884,17 +937,22 @@ void UI::drawScorePanel(sf::RenderWindow& window, sf::RectangleShape& panel, sf:
 void UI::loadSettings() {
     std::ifstream loadFile("settings.txt");
     if (loadFile.is_open()) {
+        int themeInt, styleInt;
         loadFile >> isSoundEnabled;
-		int themeInt;
         loadFile >> themeInt;
+        loadFile >> styleInt;
         currentTheme = static_cast<BoardTheme>(themeInt);
+        currentStyle = static_cast<StoneTheme>(styleInt);
         updateTheme(currentTheme);
+        updateStyle(currentStyle);
 		loadFile.close();
     }
     else {
 		isSoundEnabled = true;
         currentTheme = BoardTheme::Classic;
+        currentStyle = StoneTheme::Standard;
         updateTheme(currentTheme);
+        updateStyle(currentStyle);
 		std::cerr << "No settings file found. Using default settings.\n";
     }
 }
@@ -904,6 +962,7 @@ void UI::saveSettings() {
     if (saveFile.is_open()) {
         saveFile << isSoundEnabled << "\n";
         saveFile << static_cast<int>(currentTheme) << "\n";
+        saveFile << static_cast<int>(currentStyle) << "\n";
         saveFile.close();
     }
     else {
@@ -925,7 +984,11 @@ void UI::drawGhostStone(sf::RenderWindow& window) {
 
     if (game.board.isWithinBounds(row, col) && game.board.getStone(row, col) == Stone::None) {
         sf::Sprite ghostSprite = (game.currentPlayer == Stone::Black) ? blackStoneSprite : whiteStoneSprite;
-        ghostSprite.setScale(0.85f, 0.85f);
+
+        ghostSprite.setScale(
+            (float)baseStoneSize / ghostSprite.getTexture()->getSize().x * 0.85,
+            (float)baseStoneSize / ghostSprite.getTexture()->getSize().y * 0.85
+		);
 
         sf::Color originalColor = ghostSprite.getColor();
 
