@@ -51,7 +51,7 @@ This project was built using **Visual Studio 2022** (x64).
 - **Fuego** AI Engine (executables included in the source).
 
 ### Steps:
-1. Clone the repository: `git clone [LINK_GITHUB_CUA_BAN]`
+1. Clone the repository: `git clone https://github.com/wiih0521/Project_GoGame`
 2. Open `GoGame.sln` in Visual Studio.
 3. Ensure the Include and Library directories point to your SFML installation.
 4. Build in **Release x64** mode.
@@ -59,8 +59,8 @@ This project was built using **Visual Studio 2022** (x64).
 
 ## 👨‍💻 Authors
 
-**Faculty of Information Technology - VNU-HCM University of Science**
-*Introduction to Programming - Semester 1, Academic Year 2025-2026*
+- **Faculty of Information Technology - VNU-HCM University of Science**
+- *Introduction to Programming - Semester 1, Academic Year 2025-2026*
 
 | Student Name | Student ID | Class |
 | :--- | :--- | :--- |
