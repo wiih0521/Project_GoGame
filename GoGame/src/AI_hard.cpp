@@ -3,15 +3,12 @@
 #include <vector>
 #include <sstream>
 
-// Khai báo các biến tĩnh
 HANDLE AIHard::g_hChildStd_IN_Wr = NULL;
 HANDLE AIHard::g_hChildStd_OUT_Rd = NULL;
 HANDLE AIHard::g_hChildProcess = NULL;
 int AIHard::currentBoardSize = 19;
 std::stack<Move> AIHard::moveHistory;
 std::stack<Move> AIHard::redoHistory;
-
-// --- PHẦN GIAO TIẾP WINDOWS PIPE (Hơi phức tạp, dùng để nối dây với .exe) ---
 
 bool AIHard::startEngine(std::string path, int size) {
     currentBoardSize = size;
@@ -91,7 +88,7 @@ bool AIHard::startEngine(std::string path, int size) {
         std::cerr << ">>> Ket noi thanh cong! bot da san sang." << std::endl;
 
         sendCommand("boardsize " + std::to_string(size));
-        sendCommand("komi 6.5");
+        //sendCommand("komi 6.5");
         // sendCommand("clear_board");
         return true;
     }
@@ -172,7 +169,7 @@ std::string AIHard::sendCommand(std::string cmd) {
             timeoutCount++;
 
             if (timeoutCount > 1000) {
-                std::cerr << "[TIMEOUT] Bot khong phan hoi sau 4 giay." << std::endl;
+                std::cerr << "[TIMEOUT] Bot khong phan hoi sau 1 giay." << std::endl;
                 break;
             }
         }
@@ -192,8 +189,6 @@ std::string AIHard::sendCommand(std::string cmd) {
     return output;
 }
 
-// Chuyển đổi tọa độ: bot dùng A19 (Góc trên trái), Board dùng (0,0) (Góc trên trái)
-// Lưu ý: GTP cột là A-T (bỏ chữ I), Hàng từ dưới đếm lên (1 ở dưới, 19 ở trên)
 std::string AIHard::coordsToString(int row, int col, int boardSize) {
     if (row == -1) return "pass";
 
