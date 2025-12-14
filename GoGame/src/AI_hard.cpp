@@ -26,18 +26,21 @@ bool AIHard::startEngine(std::string path, int size) {
     if (!CreatePipe(&hChildStd_IN_Rd, &g_hChildStd_IN_Wr, &saAttr, 0)) return false;
     if (!SetHandleInformation(g_hChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0)) return false;
 
+    HANDLE hNullFile = CreateFileA("NUL", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+        &saAttr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
     PROCESS_INFORMATION piProcInfo;
     STARTUPINFOA siStartInfo;
     ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
     ZeroMemory(&siStartInfo, sizeof(STARTUPINFO));
     siStartInfo.cb = sizeof(STARTUPINFO);
-    siStartInfo.hStdError = hChildStd_OUT_Wr;
-    siStartInfo.hStdOutput = hChildStd_OUT_Wr;
+
     siStartInfo.hStdInput = hChildStd_IN_Rd;
+    siStartInfo.hStdOutput = hChildStd_OUT_Wr; 
+    siStartInfo.hStdError = (hNullFile != INVALID_HANDLE_VALUE) ? hNullFile : NULL;
     siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
 
-    std::string cmdLine = "\"" + path + "\" -d 0";
-
+    std::string cmdLine = "\"" + path + "\"";
     std::vector<char> cmdVec(cmdLine.begin(), cmdLine.end());
     cmdVec.push_back(0);
 
@@ -45,6 +48,7 @@ bool AIHard::startEngine(std::string path, int size) {
 
     CloseHandle(hChildStd_OUT_Wr);
     CloseHandle(hChildStd_IN_Rd);
+    if (hNullFile != INVALID_HANDLE_VALUE) CloseHandle(hNullFile); 
 
     if (!bSuccess) {
         std::cerr << "Khong the khoi dong bot! Hay kiem tra duong dan." << std::endl;
@@ -54,50 +58,23 @@ bool AIHard::startEngine(std::string path, int size) {
     g_hChildProcess = piProcInfo.hProcess;
     CloseHandle(piProcInfo.hThread);
 
-    std::cerr << "--- Dang khoi dong bot ---" << std::endl;
+    std::cerr << "--- Dang khoi dong bot (Che do im lang) ---" << std::endl;
 
-    char buffer[4096];
-    DWORD dwRead;
-    DWORD dwAvail = 0;
-    int silenceTime = 0;
+    Sleep(100); 
 
-    while (silenceTime < 50) { 
-        if (PeekNamedPipe(g_hChildStd_OUT_Rd, NULL, 0, NULL, &dwAvail, NULL) && dwAvail > 0) {
-            if (ReadFile(g_hChildStd_OUT_Rd, buffer, sizeof(buffer) - 1, &dwRead, NULL) && dwRead > 0) {
-                buffer[dwRead] = '\0';
-                std::cerr << buffer; 
-                silenceTime = 0; 
-            }
-        }
-        else {
-            Sleep(10);
-            silenceTime++;
-        }
-
-        DWORD exitCode;
-        if (GetExitCodeProcess(g_hChildProcess, &exitCode) && exitCode != STILL_ACTIVE) {
-            std::cerr << "Bot da tat dot ngot khi dang khoi dong!" << std::endl;
-            return false;
-        }
-    }
-
-    std::cerr << "\n--- Bot da san sang ---" << std::endl;
     std::string handshake = sendCommand("name");
 
     if (handshake.length() > 0 && handshake[0] == '=') {
-        std::cerr << ">>> Ket noi thanh cong! bot da san sang." << std::endl;
+        std::cerr << ">>> Ket noi thanh cong! Bot da san sang." << std::endl;
 
         sendCommand("boardsize " + std::to_string(size));
-        //sendCommand("komi 6.5");
-        // sendCommand("clear_board");
+        // sendCommand("komi 6.5");
         return true;
     }
     else {
-        std::cerr << ">>> Ket noi THAT BAI. bot khong phan hoi lenh handshake." << std::endl;
+        std::cerr << ">>> Ket noi THAT BAI. Bot khong phan hoi." << std::endl;
         return false;
     }
-
-    return true;
 }
 
 void AIHard::startNewGame() {
