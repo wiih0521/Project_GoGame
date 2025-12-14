@@ -8,7 +8,7 @@
 
 - **Versatile Game Modes:**
   - 👤 **PvP:** Player vs. Player on the same machine.
-  - 🤖 **PvE:** Player vs. Environment (Powered by the robust Pachi AI Engine).
+  - 🤖 **PvE:** Player vs. Environment (Powered by the robust Fuego AI Engine).
 - **AI System:** Supports multiple difficulty levels from Easy to Hard.
 - **Utilities:**
   - 💾 **Save/Load:** Save progress and reload unfinished games.
@@ -33,7 +33,7 @@ The game uses both mouse and keyboard for interaction:
 ## 📦 Installation & How to Play
 
 1. Go to the **[Releases](../../releases)** section of this repository.
-2. Download the latest `GoGame_v1.0.zip` file.
+2. Download the latest `GoGame_v1.3.zip` file.
 3. Extract the downloaded file to a folder.
 4. Run `GoGame.exe` to start playing.
    > *Note: Do not separate the `.exe` file from the folder containing `assets`, `pachi.exe`, and `.dll` files.*
